@@ -21,14 +21,25 @@ INSERT INTO services (name, description, is_active, default_commission_rate) VAL
 ON CONFLICT (name) DO NOTHING;
 
 -- Operation Types
-INSERT INTO operation_types (name, description, is_active) VALUES
-('Dépôt', 'Dépôt d''argent', TRUE),
-('Retrait', 'Retrait d''argent', TRUE),
-('Transfert National', 'Transfert d''argent national', TRUE),
-('Achat de Crédit', 'Achat de crédit téléphonique', TRUE),
-('Paiement de Facture', 'Paiement de facture', TRUE),
-('Transfert International', 'Transfert d''argent international', TRUE)
-ON CONFLICT (name) DO NOTHING;
+-- Added balance_effect, category, is_commission
+INSERT INTO operation_types (name, description, is_active, balance_effect, category, is_commission) VALUES
+('Dépôt', 'Dépôt d''argent par un client au gérant.', TRUE, 'positive', 'cash_movement', FALSE),
+('Retrait', 'Retrait d''argent par un client depuis le gérant.', TRUE, 'negative', 'cash_movement', FALSE),
+('Transfert National (Envoi)', 'Envoi d''argent national pour un client.', TRUE, 'negative', 'service_delivery', FALSE),
+('Achat de Crédit', 'Vente de crédit téléphonique à un client.', TRUE, 'positive', 'service_sale', FALSE),
+('Paiement de Facture', 'Paiement de facture pour un client.', TRUE, 'positive', 'service_payment', FALSE),
+('Transfert International (Envoi)', 'Envoi d''argent international pour un client.', TRUE, 'negative', 'service_delivery', FALSE),
+('Commission Service', 'Commission perçue sur un service rendu.', TRUE, 'positive', 'commission_earned', TRUE),
+('Frais Bancaires', 'Frais payés par le gérant à la banque.', TRUE, 'negative', 'operational_expense', FALSE),
+('Approvisionnement Caisse', 'Gérant ajoute des fonds à sa caisse (e.g. depuis son compte bancaire).', TRUE, 'positive', 'internal_transfer', FALSE),
+('Retrait Caisse vers Banque', 'Gérant retire des fonds de sa caisse vers son compte bancaire.', TRUE, 'negative', 'internal_transfer', FALSE)
+ON CONFLICT (name) DO UPDATE SET
+    description = EXCLUDED.description,
+    is_active = EXCLUDED.is_active,
+    balance_effect = EXCLUDED.balance_effect,
+    category = EXCLUDED.category,
+    is_commission = EXCLUDED.is_commission,
+    updated_at = NOW();
 
 -- Retrieve IDs for linking (this is a bit tricky in plain SQL seeds without scripting)
 -- For actual seeding, you might run these SELECTs and use the results in subsequent INSERTs,

@@ -149,10 +149,22 @@ class StatistiqueController extends Controller {
 
         // $totalDeposits = Operation::sumAmountByCriteria(array_merge($criteria, ['operation_type_id_in' => $depositTypes]));
         // $totalWithdrawals = Operation::sumAmountByCriteria(array_merge($criteria, ['operation_type_id_in' => $withdrawalTypes]));
-        // For placeholder:
-        $totalDeposits = Operation::sumAmountByCriteria(array_merge($criteria, ['operation_type_id' => 1])); // Assuming ID 1 is 'Dépôt'
-        $totalWithdrawals = Operation::sumAmountByCriteria(array_merge($criteria, ['operation_type_id' => 2])); // Assuming ID 2 is 'Retrait'
-        $totalCommissionsEarned = Operation::sumAmountByCriteria($criteria, 'commission_applied');
+
+        // Calculate Total Deposits: sum of amounts for operations that positively affect balance, excluding pure commissions
+        $depositCriteria = array_merge($criteria, ['ot_balance_effect' => 'positive', 'ot_is_commission' => false]);
+        $totalDeposits = Operation::sumAmountByCriteria($depositCriteria, 'amount');
+
+        // Calculate Total Withdrawals: sum of amounts for operations that negatively affect balance, excluding pure commissions
+        $withdrawalCriteria = array_merge($criteria, ['ot_balance_effect' => 'negative', 'ot_is_commission' => false]);
+        $totalWithdrawals = Operation::sumAmountByCriteria($withdrawalCriteria, 'amount'); // sumAmountByCriteria sums positives, so this will be a positive number representing total withdrawn
+
+        // Calculate Total Commissions Earned: sum of amounts where operation type is a commission
+        // OR sum of 'commission_applied' for all non-commission-type operations.
+        // For simplicity, let's sum 'commission_applied' from all operations,
+        // AND add amounts of operations that are themselves commissions.
+        $commissionsFromApplied = Operation::sumAmountByCriteria($criteria, 'commission_applied');
+        $commissionsFromDirectOps = Operation::sumAmountByCriteria(array_merge($criteria, ['ot_is_commission' => true, 'ot_balance_effect' => 'positive']), 'amount');
+        $totalCommissionsEarned = $commissionsFromApplied + $commissionsFromDirectOps;
 
 
         $this->jsonResponse([
@@ -428,9 +440,27 @@ class StatistiqueController extends Controller {
         }
 
         // Placeholder logic for fetching data, similar to getFinancialSummary
-        $totalDeposits = Operation::sumAmountByCriteria(array_merge($criteria, ['operation_type_id' => 1])); // Assuming ID 1 is 'Dépôt'
-        $totalWithdrawals = Operation::sumAmountByCriteria(array_merge($criteria, ['operation_type_id' => 2])); // Assuming ID 2 is 'Retrait'
-        $totalCommissionsEarned = Operation::sumAmountByCriteria($criteria, 'commission_applied');
+        // $totalDeposits = Operation::sumAmountByCriteria(array_merge($criteria, ['operation_type_id' => 1]));
+        // $totalWithdrawals = Operation::sumAmountByCriteria(array_merge($criteria, ['operation_type_id' => 2]));
+        // $totalCommissionsEarned = Operation::sumAmountByCriteria($criteria, 'commission_applied');
+        $depositCriteria = array_merge($criteria, ['ot_balance_effect' => 'positive', 'ot_is_commission' => false]);
+        $totalDeposits = Operation::sumAmountByCriteria($depositCriteria, 'amount');
+        $withdrawalCriteria = array_merge($criteria, ['ot_balance_effect' => 'negative', 'ot_is_commission' => false]);
+        $totalWithdrawals = Operation::sumAmountByCriteria($withdrawalCriteria, 'amount');
+        $commissionsFromApplied = Operation::sumAmountByCriteria($criteria, 'commission_applied');
+        $commissionsFromDirectOps = Operation::sumAmountByCriteria(array_merge($criteria, ['ot_is_commission' => true, 'ot_balance_effect' => 'positive']), 'amount');
+        $totalCommissionsEarned = $commissionsFromApplied + $commissionsFromDirectOps;
+
+        // $totalDeposits = Operation::sumAmountByCriteria(array_merge($criteria, ['operation_type_id' => 1]));
+        // $totalWithdrawals = Operation::sumAmountByCriteria(array_merge($criteria, ['operation_type_id' => 2]));
+        // $totalCommissionsEarned = Operation::sumAmountByCriteria($criteria, 'commission_applied');
+        $depositCriteria = array_merge($criteria, ['ot_balance_effect' => 'positive', 'ot_is_commission' => false]);
+        $totalDeposits = Operation::sumAmountByCriteria($depositCriteria, 'amount');
+        $withdrawalCriteria = array_merge($criteria, ['ot_balance_effect' => 'negative', 'ot_is_commission' => false]);
+        $totalWithdrawals = Operation::sumAmountByCriteria($withdrawalCriteria, 'amount');
+        $commissionsFromApplied = Operation::sumAmountByCriteria($criteria, 'commission_applied');
+        $commissionsFromDirectOps = Operation::sumAmountByCriteria(array_merge($criteria, ['ot_is_commission' => true, 'ot_balance_effect' => 'positive']), 'amount');
+        $totalCommissionsEarned = $commissionsFromApplied + $commissionsFromDirectOps;
 
         if ($totalDeposits == 0 && $totalWithdrawals == 0 && $totalCommissionsEarned == 0) {
              http_response_code(404);

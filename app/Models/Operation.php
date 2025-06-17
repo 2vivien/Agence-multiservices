@@ -146,7 +146,29 @@ class Operation extends Model {
         $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
         $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_CLASS, static::class);
+        $operations = $stmt->fetchAll(PDO::FETCH_CLASS, static::class);
+
+        // Count query
+        $countSql = "SELECT COUNT(o.id) FROM operations o ";
+        if (!empty($filters['service_id']) || !empty($filters['operation_type_id']) || !empty($filters['date_from']) || !empty($filters['date_to'])) {
+             // Rebuild where clause for count without user_id, limit, offset
+            $countWhereClauses = [];
+            $countParams = [':user_id' => $userId]; // user_id is always part of the base condition
+            if (!empty($filters['service_id'])) { $countWhereClauses[] = "o.service_id = :service_id"; $countParams[':service_id'] = $filters['service_id'];}
+            if (!empty($filters['operation_type_id'])) { $countWhereClauses[] = "o.operation_type_id = :operation_type_id"; $countParams[':operation_type_id'] = $filters['operation_type_id'];}
+            if (!empty($filters['date_from'])) { $countWhereClauses[] = "o.operation_time >= :date_from"; $countParams[':date_from'] = $filters['date_from'];}
+            if (!empty($filters['date_to'])) { $countWhereClauses[] = "o.operation_time <= :date_to"; $countParams[':date_to'] = $filters['date_to'];}
+            $countSql .= " WHERE o.user_id = :user_id" . (!empty($countWhereClauses) ? " AND " . implode(" AND ", $countWhereClauses) : "");
+        } else {
+            $countSql .= " WHERE o.user_id = :user_id";
+            $countParams = [':user_id' => $userId];
+        }
+
+        $countStmt = self::db()->prepare($countSql);
+        $countStmt->execute($countParams);
+        $totalRecords = (int)$countStmt->fetchColumn();
+
+        return ['data' => $operations, 'total' => $totalRecords];
     }
 
     /**
@@ -324,50 +346,66 @@ class Operation extends Model {
      * @param array $filters Associative array of filters
      * @param int $limit
      * @param int $offset
-     * @return array
+     * @return array ['data' => array of Operation objects, 'total' => total record count]
      */
     public static function findAllAdmin(array $filters = [], int $limit = 10, int $offset = 0): array {
         $params = [':limit' => $limit, ':offset' => $offset];
-        $sql = "SELECT o.*, u.username as user_username, s.name as service_name, ot.name as operation_type_name
-                FROM operations o
-                JOIN users u ON o.user_id = u.id
-                JOIN services s ON o.service_id = s.id
-                JOIN operation_types ot ON o.operation_type_id = ot.id";
+        $countParams = []; // For count query
+        $sqlBase = "FROM operations o
+                    JOIN users u ON o.user_id = u.id
+                    JOIN services s ON o.service_id = s.id
+                    JOIN operation_types ot ON o.operation_type_id = ot.id";
 
         $whereClauses = [];
         if (!empty($filters['user_id'])) {
             $whereClauses[] = "o.user_id = :user_id";
             $params[':user_id'] = $filters['user_id'];
+            $countParams[':user_id'] = $filters['user_id'];
         }
         if (!empty($filters['service_id'])) {
             $whereClauses[] = "o.service_id = :service_id";
             $params[':service_id'] = $filters['service_id'];
+            $countParams[':service_id'] = $filters['service_id'];
         }
         if (!empty($filters['operation_type_id'])) {
             $whereClauses[] = "o.operation_type_id = :operation_type_id";
             $params[':operation_type_id'] = $filters['operation_type_id'];
+            $countParams[':operation_type_id'] = $filters['operation_type_id'];
         }
         if (!empty($filters['date_from'])) {
             $whereClauses[] = "o.operation_time >= :date_from";
             $params[':date_from'] = $filters['date_from'];
+            $countParams[':date_from'] = $filters['date_from'];
         }
         if (!empty($filters['date_to'])) {
             $whereClauses[] = "o.operation_time <= :date_to";
             $params[':date_to'] = $filters['date_to'];
+            $countParams[':date_to'] = $filters['date_to'];
         }
 
+        $whereSql = "";
         if (!empty($whereClauses)) {
-            $sql .= " WHERE " . implode(" AND ", $whereClauses);
+            $whereSql = " WHERE " . implode(" AND ", $whereClauses);
         }
 
-        $sql .= " ORDER BY o.operation_time DESC LIMIT :limit OFFSET :offset";
+        // Data query
+        $sql = "SELECT o.*, u.username as user_username, s.name as service_name, ot.name as operation_type_name "
+             . $sqlBase . $whereSql . " ORDER BY o.operation_time DESC LIMIT :limit OFFSET :offset";
 
         $stmt = self::db()->prepare($sql);
         foreach ($params as $param => $value) {
             $stmt->bindValue($param, $value, (is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR));
         }
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_CLASS, static::class);
+        $operations = $stmt->fetchAll(PDO::FETCH_CLASS, static::class);
+
+        // Count query
+        $countSql = "SELECT COUNT(o.id) " . $sqlBase . $whereSql;
+        $countStmt = self::db()->prepare($countSql);
+        $countStmt->execute($countParams); // Execute with only filter params
+        $totalRecords = (int)$countStmt->fetchColumn();
+
+        return ['data' => $operations, 'total' => $totalRecords];
     }
 
     /**
@@ -379,11 +417,13 @@ class Operation extends Model {
         $today_start = date('Y-m-d 00:00:00');
         $today_end = date('Y-m-d 23:59:59');
 
-        $sql = "SELECT * FROM " . (new static())->table . "
-                WHERE user_id = :user_id
-                AND balance_id IS NULL
-                AND operation_time BETWEEN :today_start AND :today_end
-                ORDER BY operation_time ASC";
+        $sql = "SELECT o.*, ot.balance_effect, ot.category, ot.is_commission
+                FROM " . (new static())->table . " o
+                JOIN operation_types ot ON o.operation_type_id = ot.id
+                WHERE o.user_id = :user_id
+                AND o.balance_id IS NULL
+                AND o.operation_time BETWEEN :today_start AND :today_end
+                ORDER BY o.operation_time ASC";
 
         $stmt = self::db()->prepare($sql);
         $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
@@ -429,16 +469,27 @@ class Operation extends Model {
         $allowedFilters = [
             'user_id' => 'o.user_id',
             'service_id' => 'o.service_id',
-            'operation_type_id' => 'o.operation_type_id',
+            'operation_type_id' => 'o.operation_type_id', // Direct column on operations
             'balance_id' => 'o.balance_id',
-            // Special handling for date ranges
             'date_from' => 'o.operation_time >=',
             'date_to' => 'o.operation_time <=',
-            // Add other potential filterable columns here
+            // For joined operation_types table (aliased as 'ot')
+            'ot_category' => 'ot.category',
+            'ot_is_commission' => 'ot.is_commission',
+            'ot_balance_effect' => 'ot.balance_effect',
         ];
 
         foreach ($criteria as $key => $value) {
             if (isset($allowedFilters[$key]) && $value !== null) {
+                // Handle boolean FALSE value for is_commission
+                if ($key === 'ot_is_commission' && is_bool($value)) {
+                    $whereClauses[] = "{$allowedFilters[$key]} = " . ($value ? 'TRUE' : 'FALSE');
+                    // No parameter needed for direct boolean comparison if your DB supports TRUE/FALSE keywords
+                    // If using parameters for booleans, ensure they are correctly cast (e.g., to int 0/1)
+                    // $params[$paramKey] = (int)$value;
+                    continue;
+                }
+
                 $columnAndOperator = explode(' ', $allowedFilters[$key]);
                 $column = $columnAndOperator[0];
                 $operator = count($columnAndOperator) > 1 ? $columnAndOperator[1] : '=';
@@ -463,9 +514,22 @@ class Operation extends Model {
         }
 
         $params = [];
-        $whereClause = self::buildCriteriaWhereClause($criteria, $params);
+        $joinOperationTypes = false;
+        foreach (array_keys($criteria) as $key) {
+            if (strpos($key, 'ot_') === 0) {
+                $joinOperationTypes = true;
+                break;
+            }
+        }
 
-        $sql = "SELECT SUM(o.{$sumColumn}) as total FROM " . (new static())->table . " o {$whereClause}";
+        $sqlBase = "FROM " . (new static())->table . " o";
+        if ($joinOperationTypes) {
+            $sqlBase .= " JOIN operation_types ot ON o.operation_type_id = ot.id";
+        }
+
+        $whereClause = self::buildCriteriaWhereClause($criteria, $params); // Pass $joinOperationTypes if helper needs it
+
+        $sql = "SELECT SUM(o.{$sumColumn}) as total " . $sqlBase . " " . $whereClause;
 
         $stmt = self::db()->prepare($sql);
         $stmt->execute($params);
@@ -480,9 +544,22 @@ class Operation extends Model {
      */
     public static function countByCriteria(array $criteria): int {
         $params = [];
+        $joinOperationTypes = false;
+        foreach (array_keys($criteria) as $key) {
+            if (strpos($key, 'ot_') === 0) {
+                $joinOperationTypes = true;
+                break;
+            }
+        }
+
+        $sqlBase = "FROM " . (new static())->table . " o";
+        if ($joinOperationTypes) {
+            $sqlBase .= " JOIN operation_types ot ON o.operation_type_id = ot.id";
+        }
+
         $whereClause = self::buildCriteriaWhereClause($criteria, $params);
 
-        $sql = "SELECT COUNT(*) as count FROM " . (new static())->table . " o {$whereClause}";
+        $sql = "SELECT COUNT(o.id) as count " . $sqlBase . " " . $whereClause;
 
         $stmt = self::db()->prepare($sql);
         $stmt->execute($params);
@@ -498,16 +575,28 @@ class Operation extends Model {
     public static function getStatsByService(array $criteria): array {
         $params = [];
         $baseTableAlias = 'o'; // Alias for the operations table in buildCriteriaWhereClause
-        // Need to adjust buildCriteriaWhereClause if it hardcodes alias, or pass alias to it.
-        // For now, assume buildCriteriaWhereClause works with 'o.' prefix.
+        // This method's $criteria might contain 'ot_' prefixed keys if we want to filter
+        // operations based on operation_type properties before grouping by service.
+        $joinOperationTypes = false;
+        foreach (array_keys($criteria) as $key) {
+            if (strpos($key, 'ot_') === 0) {
+                $joinOperationTypes = true;
+                break;
+            }
+        }
+
+        $sqlBase = "FROM operations o JOIN services s ON o.service_id = s.id";
+        if ($joinOperationTypes) {
+            $sqlBase .= " JOIN operation_types ot ON o.operation_type_id = ot.id";
+        }
+
         $whereClause = self::buildCriteriaWhereClause($criteria, $params);
 
         $sql = "SELECT s.id as service_id, s.name as service_name,
                        COUNT(o.id) as operation_count,
                        SUM(o.amount) as total_amount,
-                       SUM(o.commission_applied) as total_commission
-                FROM operations o
-                JOIN services s ON o.service_id = s.id "
+                       SUM(o.commission_applied) as total_commission "
+              . $sqlBase . " "
               . $whereClause .
                " GROUP BY s.id, s.name
                  ORDER BY s.name ASC";

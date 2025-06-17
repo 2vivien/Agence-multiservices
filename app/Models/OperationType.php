@@ -10,6 +10,9 @@ class OperationType extends Model {
     public string $name;
     public ?string $description = null;
     public bool $is_active = true;
+    public string $balance_effect = 'neutral'; // 'positive', 'negative', 'neutral'
+    public ?string $category = null;
+    public bool $is_commission = false;
     public ?string $created_at = null;
     public ?string $updated_at = null;
 

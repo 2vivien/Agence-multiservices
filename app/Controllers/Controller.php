@@ -9,6 +9,19 @@ abstract class Controller {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
+
+        // Basic CSRF protection for state-changing methods
+        if (in_array($_SERVER['REQUEST_METHOD'] ?? '', ['POST', 'PUT', 'DELETE', 'PATCH'])) {
+            if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
+                // Allow if Content-Type is application/json, as this is also a common indicator of non-form AJAX
+                // This is a weaker check but common for APIs that might not always send X-Requested-With
+                $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+                if (stripos($contentType, 'application/json') === false) {
+                    $this->jsonResponse(['error' => 'Invalid request. Possible CSRF attempt or non-AJAX request.'], 403);
+                    exit;
+                }
+            }
+        }
     }
 
     /**

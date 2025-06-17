@@ -34,6 +34,9 @@ CREATE TABLE IF NOT EXISTS operation_types (
     name VARCHAR(255) UNIQUE NOT NULL,
     description TEXT,
     is_active BOOLEAN DEFAULT TRUE,
+    balance_effect VARCHAR(10) NOT NULL DEFAULT 'neutral' CHECK (balance_effect IN ('positive', 'negative', 'neutral')),
+    category VARCHAR(50) NULL,
+    is_commission BOOLEAN DEFAULT FALSE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

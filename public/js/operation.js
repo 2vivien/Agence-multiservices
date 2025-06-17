@@ -14,6 +14,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentEditingOperationId = null;
     let currentFilters = {}; // To store any active filters if they are added later
 
+    // Pagination state for operations
+    let opsCurrentPage = 1;
+    let opsTotalPages = 1;
+    let opsTotalRecords = 0;
+    const opsLimit = 15; // Operations per page
+
     // DOM Elements
     const operationsTableBody = document.getElementById('operations-table-body');
     const operationForm = document.getElementById('operation-form');
@@ -35,6 +41,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Export buttons
     const exportPdfBtn = document.getElementById('export-ops-pdf-btn');
     const exportExcelBtn = document.getElementById('export-ops-excel-btn');
+
+    // Pagination Elements for Operations
+    const opsPaginationInfoEl = document.getElementById('operations-pagination-info');
+    const opsPrevPageButton = document.getElementById('operations-prev-page-btn');
+    const opsNextPageButton = document.getElementById('operations-next-page-btn');
+    const opsCurrentPageEl = document.getElementById('operations-current-page');
+    const opsTotalPagesEl = document.getElementById('operations-total-pages');
+    // const opsTotalRecordsEl = document.getElementById('operations-total-records'); // Not used in current HTML, but part of state
 
     async function loadPrerequisites() {
         try {
@@ -69,44 +83,57 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Function to get current filters (if any were added to the page)
-    // For now, it's empty, but can be expanded if filter inputs are added to operation.html
     function getCurrentOperationFilters() {
         const filters = {};
-        // Example: if a date filter was added with id 'filter-op-date'
+        // Example: if filter inputs are added to operation.html
         // const dateFilter = document.getElementById('filter-op-date');
-        // if (dateFilter && dateFilter.value) {
-        //     filters.date = dateFilter.value;
-        // }
-        // currentFilters = filters; // Update global currentFilters if needed elsewhere
+        // if (dateFilter && dateFilter.value) filters.date = dateFilter.value;
+        // currentFilters = filters; // Update global currentFilters if needed
         return filters;
     }
 
-
-    async function fetchOperations() {
+    async function fetchOperations(page = 1) {
         if (tableLoadingIndicator) tableLoadingIndicator.classList.remove('hidden');
         if (operationsTable) operationsTable.classList.add('hidden');
 
-        currentFilters = getCurrentOperationFilters(); // Update filters before fetching
-        const queryParams = new URLSearchParams(currentFilters).toString();
-
+        opsCurrentPage = page;
+        currentFilters = getCurrentOperationFilters();
+        const queryParams = new URLSearchParams({
+            ...currentFilters,
+            page: opsCurrentPage,
+            limit: opsLimit
+        }).toString();
 
         try {
             const response = await fetch(`/api/operations?${queryParams}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
             if (!response.ok) {
                 await handleApiError(response);
                 operationsList = [];
+                opsTotalRecords = 0;
             } else {
                 const result = await response.json();
-                // The API /api/operations might return an array directly or an object with a 'data' property for pagination.
-                // The current backend OperationController@index returns array directly without pagination structure.
-                operationsList = result.data || result;
+                // Backend needs to send { data: [...], pagination: { total_records: X, current_page: Y, total_pages: Z }}
+                // For now, if backend OperationController@index sends array directly:
+                if(Array.isArray(result)){
+                    operationsList = result;
+                    opsTotalRecords = result.length; // This is only for the current page, not total
+                    // This means backend needs to be updated for proper pagination metadata
+                    showGlobalNotification("Pagination complète nécessite une mise à jour du backend pour OperationController@index.", "warning");
+                    opsTotalPages = 1; // Assume 1 page if no metadata
+                } else { // Assuming backend sends the structured response
+                    operationsList = result.data || [];
+                    opsTotalRecords = result.pagination?.total_records || 0;
+                    opsTotalPages = result.pagination?.total_pages || 1;
+                    opsCurrentPage = result.pagination?.current_page || page;
+                }
             }
             renderOperationsTable(operationsList);
+            renderOperationsPagination();
         } catch (error) {
             console.error('Error in fetchOperations:', error);
             showGlobalNotification('Erreur réseau lors du chargement des opérations.', 'error');
             renderOperationsTable([]);
+            renderOperationsPagination();
         } finally {
             if (tableLoadingIndicator) tableLoadingIndicator.classList.add('hidden');
             if (operationsTable) operationsTable.classList.remove('hidden');
@@ -131,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${op.operation_type_name || operationTypesList.find(ot => ot.id == op.operation_type_id)?.name || op.operation_type_id}</td>
                 <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700 text-right">${formatCurrency(op.amount)}</td>
                 <td class="px-6 py-3 whitespace-nowrap text-sm text-right">
-                    <button data-id="${op.id}" class="edit-btn text-indigo-600 hover:text-indigo-800 mr-2" title="Modifier"><i class="fas fa-edit"></i> Modifier</button>
+                    <button data-id="${op.id}" class="edit-btn text-indigo-600 hover:text-indigo-900 mr-2" title="Modifier"><i class="fas fa-edit"></i> Modifier</button>
                     <button data-id="${op.id}" class="delete-btn text-red-600 hover:text-red-900" title="Supprimer"><i class="fas fa-trash"></i> Supprimer</button>
                 </td>
             `;
@@ -140,6 +167,24 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.edit-btn').forEach(button => button.addEventListener('click', (e) => editOperation(e.currentTarget.dataset.id)));
         document.querySelectorAll('.delete-btn').forEach(button => button.addEventListener('click', (e) => deleteOperation(e.currentTarget.dataset.id)));
     }
+
+    function renderOperationsPagination() {
+        if (!opsPaginationInfoEl || !opsPrevPageButton || !opsNextPageButton || !opsCurrentPageEl || !opsTotalPagesEl) {
+             console.warn("Operations pagination elements not all found.");
+             return;
+        }
+
+        // If backend doesn't provide total_pages, calculate it.
+        opsTotalPages = Math.ceil(opsTotalRecords / opsLimit) || 1;
+
+        if(opsPaginationInfoEl) opsPaginationInfoEl.textContent = `Page ${opsCurrentPage} sur ${opsTotalPages}. Total: ${opsTotalRecords} opérations.`;
+        if(opsCurrentPageEl) opsCurrentPageEl.textContent = opsCurrentPage;
+        if(opsTotalPagesEl) opsTotalPagesEl.textContent = opsTotalPages;
+
+        if(opsPrevPageButton) opsPrevPageButton.disabled = opsCurrentPage <= 1;
+        if(opsNextPageButton) opsNextPageButton.disabled = opsCurrentPage >= opsTotalPages;
+    }
+
 
     async function handleFormSubmit(event) {
         event.preventDefault();
@@ -183,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.ok) {
                 showGlobalNotification(currentEditingOperationId ? 'Opération mise à jour avec succès!' : 'Opération ajoutée avec succès!', 'success');
-                fetchOperations();
+                fetchOperations(currentEditingOperationId ? opsCurrentPage : 1); // Refresh current page or go to first after create
                 resetForm();
                 document.dispatchEvent(new CustomEvent('operationsUpdated'));
             } else if (response.status === 422 && responseData.errors) {
@@ -249,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.ok || response.status === 204) {
                 showGlobalNotification('Opération supprimée avec succès!', 'success');
-                fetchOperations();
+                fetchOperations(opsCurrentPage); // Refresh current page
                 document.dispatchEvent(new CustomEvent('operationsUpdated'));
             } else {
                 await handleApiError(response);
@@ -273,7 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Export handlers
     function handleExport(exportType) {
         showGlobalNotification('Préparation de l\'export...', 'info');
-        const filters = getCurrentOperationFilters(); // Use current filters for export
+        const filters = getCurrentOperationFilters();
         const queryParams = new URLSearchParams(filters).toString();
         const exportUrl = `/api/operations/export/${exportType}?${queryParams}`;
         window.open(exportUrl, '_blank');
@@ -286,12 +331,21 @@ document.addEventListener('DOMContentLoaded', () => {
         exportExcelBtn.addEventListener('click', () => handleExport('excel'));
     }
 
+    // Pagination Event Listeners
+    if(opsPrevPageButton) opsPrevPageButton.addEventListener('click', () => {
+        if (opsCurrentPage > 1) fetchOperations(opsCurrentPage - 1);
+    });
+    if(opsNextPageButton) opsNextPageButton.addEventListener('click', () => {
+        if (opsCurrentPage < opsTotalPages) fetchOperations(opsCurrentPage + 1);
+    });
+
+
     // Initial setup
     if (operationForm) operationForm.addEventListener('submit', handleFormSubmit);
     if (resetButton) resetButton.addEventListener('click', resetForm);
 
     loadPrerequisites();
-    fetchOperations();
+    fetchOperations(1); // Load initial page
 
     function formatCurrency(amount) {
         return amount !== null && amount !== undefined ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(amount) : 'N/A';

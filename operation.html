@@ -131,9 +131,21 @@
                     </tbody>
                 </table>
             </div>
-            <!-- Pagination (Placeholder) -->
-            <div class="mt-4 flex justify-center">
-                <!-- Pagination controls will go here if implemented -->
+            <!-- Pagination -->
+            <div id="operations-pagination-controls" class="mt-6 flex flex-col items-center space-y-2 sm:flex-row sm:justify-between">
+                <div id="operations-pagination-info" class="text-sm text-gray-700">
+                    Page <span id="operations-current-page" class="font-medium">1</span>
+                    sur <span id="operations-total-pages" class="font-medium">1</span>.
+                    Total: <span id="operations-total-records" class="font-medium">0</span> opérations.
+                </div>
+                <div class="inline-flex mt-2 xs:mt-0">
+                    <button id="operations-prev-page-btn" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-l hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fas fa-arrow-left mr-1"></i> Préc.
+                    </button>
+                    <button id="operations-next-page-btn" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-r border-0 border-l border-indigo-700 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Suiv. <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>

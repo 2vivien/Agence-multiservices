@@ -123,10 +123,18 @@
                     </tbody>
                 </table>
             </div>
+            <!-- Users Pagination -->
+            <div id="users-pagination-controls" class="mt-4 flex flex-col items-center space-y-2 sm:flex-row sm:justify-between">
+                <div id="users-pagination-info" class="text-sm text-gray-700"></div>
+                <div class="inline-flex mt-2 xs:mt-0">
+                    <button id="users-prev-page-btn" class="px-3 py-1 text-sm font-medium text-white bg-indigo-600 rounded-l hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">Préc.</button>
+                    <button id="users-next-page-btn" class="px-3 py-1 text-sm font-medium text-white bg-indigo-600 rounded-r border-0 border-l border-indigo-700 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">Suiv.</button>
+                </div>
+            </div>
         </section>
 
         <!-- Service Management Section -->
-        <section>
+        <section class="mt-12"> <!-- Added margin-top for separation -->
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-semibold text-gray-700">Gestion des Services</h2>
                 <button id="add-service-button" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow-sm">
@@ -181,6 +189,14 @@
                         <tr><td colspan="5" class="text-center py-4 text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Chargement des services...</td></tr>
                     </tbody>
                 </table>
+            </div>
+            <!-- Services Pagination -->
+            <div id="services-pagination-controls" class="mt-4 flex flex-col items-center space-y-2 sm:flex-row sm:justify-between">
+                <div id="services-pagination-info" class="text-sm text-gray-700"></div>
+                <div class="inline-flex mt-2 xs:mt-0">
+                    <button id="services-prev-page-btn" class="px-3 py-1 text-sm font-medium text-white bg-indigo-600 rounded-l hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">Préc.</button>
+                    <button id="services-next-page-btn" class="px-3 py-1 text-sm font-medium text-white bg-indigo-600 rounded-r border-0 border-l border-indigo-700 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">Suiv.</button>
+                </div>
             </div>
         </section>
     </div>

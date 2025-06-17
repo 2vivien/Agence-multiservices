@@ -27,12 +27,23 @@ class UserController extends Controller {
         }
 
         // TODO: Implement pagination (limit, offset)
-        // $users = User::getUsers($filters); // Assumes a getUsers method in User model
+        // $users = User::getUsers($filters);
+        $page = (int)($this->get('page', 1));
+        $limit = (int)($this->get('limit', 10)); // Default limit from User::getUsers
+        $offset = ($page - 1) * $limit;
+
+        $result = User::getUsers($filters, $limit, $offset);
 
         $this->jsonResponse([
-            'message' => 'User list (not fully implemented)',
+            'message' => 'User list retrieved successfully.',
             'filters_applied' => $filters,
-            'data' => [] // Placeholder for users list
+            'data' => $result['data'],
+            'pagination' => [
+                'total_records' => $result['total'],
+                'current_page' => $page,
+                'per_page' => $limit,
+                'total_pages' => ceil($result['total'] / $limit)
+            ]
         ]);
     }
 

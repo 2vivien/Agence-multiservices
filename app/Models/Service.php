@@ -178,7 +178,25 @@ class Service extends Model {
              $stmt->bindValue($paramKey, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
         }
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_CLASS, static::class);
+        $services = $stmt->fetchAll(PDO::FETCH_CLASS, static::class);
+
+        // Get total count for pagination
+        $countSql = "SELECT COUNT(*) FROM " . (new static())->table;
+        if (!empty($whereClauses)) {
+            $countSql .= " WHERE " . implode(" AND ", $whereClauses);
+        }
+        // Remove limit/offset params for count query
+        $countParams = $params;
+        unset($countParams[':limit'], $countParams[':offset']);
+
+        $countStmt = self::db()->prepare($countSql);
+        foreach ($countParams as $paramKey => $value) {
+             $countStmt->bindValue($paramKey, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $countStmt->execute();
+        $totalRecords = (int)$countStmt->fetchColumn();
+
+        return ['data' => $services, 'total' => $totalRecords];
     }
 
     /**

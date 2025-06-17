@@ -135,33 +135,44 @@ class Balance extends Model {
         $totalCashed = 0;
         $totalCommissions = 0;
 
-        foreach ($operations as $operation) {
-            // Assuming 'Dépôt' and 'Transfert National' (as receiver) increase cash
-            // Assuming 'Retrait' and 'Transfert National' (as sender) decrease cash
-            // This logic needs to be very robust based on precise operation type effects
-            $opType = OperationType::find($operation->operation_type_id);
-            if ($opType) {
-                 // Simplified: Dépôt increases, Retrait decreases. Other types might be neutral or specific.
-                if (str_contains(strtolower($opType->name), 'dépôt')) {
-                    $totalCashed += $operation->amount;
-                } elseif (str_contains(strtolower($opType->name), 'retrait')) {
-                    $totalCashed -= $operation->amount;
+        if (count($operations) > 0) {
+            $operationTypeIds = array_unique(array_map(fn($op) => $op->operation_type_id, $operations));
+            $operationTypesMap = [];
+            if (!empty($operationTypeIds)) {
+                // Construct placeholders for IN clause
+                $placeholders = implode(',', array_fill(0, count($operationTypeIds), '?'));
+                $stmt = Model::db()->prepare("SELECT id, name FROM operation_types WHERE id IN ($placeholders)");
+
+                $stmt->execute(array_values($operationTypeIds));
+                while ($ot = $stmt->fetch(PDO::FETCH_OBJ)) {
+                    $operationTypesMap[$ot->id] = $ot;
                 }
-                // Add more conditions for other operation types affecting cash flow
             }
-            $totalCommissions += $operation->commission_applied;
+
+            foreach ($operations as $operation) {
+                // This logic needs to be very robust based on precise operation type effects
+                $opType = $operationTypesMap[$operation->operation_type_id] ?? null;
+                if ($opType) {
+                     // Simplified: Dépôt increases, Retrait decreases. Other types might be neutral or specific.
+                    if (stripos($opType->name, 'dépôt') !== false) { // Using stripos for case-insensitive
+                        $totalCashed += $operation->amount;
+                    } elseif (stripos($opType->name, 'retrait') !== false) {
+                        $totalCashed -= $operation->amount;
+                    }
+                    // Add more conditions for other operation types affecting cash flow
+                }
+                $totalCommissions += $operation->commission_applied;
+            }
         }
 
-        // The `total_cashed_calculated` in the DB is (final_balance - initial_balance)
-        // The logic here is for calculating based on operations.
-        // The `final_balance` should ideally be `initial_balance + sum_of_deposits_etc - sum_of_withdrawals_etc`
-        // `total_cashed_calculated` should be sum of operations that contribute to cash inflow for the agent.
+        // The `total_cashed_calculated` (generated column) was removed from schema.
+        // The logic here calculates `totalCashed` based on operations (sum of deposits - sum of withdrawals, simplified).
+        // This $totalCashed is used by ClotureController to determine `calculated_final_amount`.
         // `total_commission_calculated` is sum of commissions earned from operations.
 
-        // For now, let's assume $totalCashed is the sum of cash movements based on operations.
-        // The discrepancy calculation will use these.
-        // $this->total_cashed_calculated = $totalCashed; // This is a generated column in DB
-        $this->total_commission_calculated = $totalCommissions; // This needs to be stored
+        // For now, let's assume $totalCashed is the net sum of cash movements based on operations.
+        // The `difference_amount` (previously discrepancy) will be `actual_final_amount - calculated_final_amount`.
+        $this->total_commission_calculated = $totalCommissions; // This needs to be stored for the balance entry.
 
         return ['total_cashed_operations' => $totalCashed, 'total_commissions' => $totalCommissions];
     }

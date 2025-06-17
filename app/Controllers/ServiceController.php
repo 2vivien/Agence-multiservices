@@ -38,10 +38,29 @@ class ServiceController extends Controller {
             $this->jsonResponse(['error' => 'Forbidden. Admin access required.'], 403);
             return;
         }
-        // $services = Service::getServices([]); // Assuming a getServices method that takes filters
-        // For now, use getAllServices if it exists from base Model or Service model
-        $services = Service::getAllServices(); // Assumes this method exists and returns all
-        $this->jsonResponse($services);
+        // $services = Service::getServices([]);
+        $filters = [];
+        if ($this->get('is_active') !== null) {
+            $filters['is_active'] = filter_var($this->get('is_active'), FILTER_VALIDATE_BOOLEAN);
+        }
+
+        $page = (int)($this->get('page', 1));
+        $limit = (int)($this->get('limit', 10));
+        $offset = ($page - 1) * $limit;
+
+        $result = Service::getServices($filters, $limit, $offset);
+
+        $this->jsonResponse([
+            'message' => 'Admin service list retrieved successfully.',
+            'filters_applied' => $filters,
+            'data' => $result['data'],
+            'pagination' => [
+                'total_records' => $result['total'],
+                'current_page' => $page,
+                'per_page' => $limit,
+                'total_pages' => ceil($result['total'] / $limit)
+            ]
+        ]);
     }
 
     /**
