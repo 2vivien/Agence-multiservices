@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - Gestion Multiservice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .input-field:focus-within {
+            border-color: #2563EB;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+        .btn-login:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-1px);
+        }
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        .error-message {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden">
+        <!-- Header -->
+        <div class="bg-blue-600 py-6 px-8 text-center">
+            <div class="flex justify-center mb-2">
+                <div class="bg-white p-3 rounded-full shadow-md">
+                    <i class="fas fa-building text-blue-600 text-2xl"></i>
+                </div>
+            </div>
+            <h1 class="text-2xl font-bold text-white">Gestion Multiservice</h1>
+            <p class="text-blue-100 mt-2">Bienvenue sur votre plateforme de gestion</p>
+        </div>
+        
+        <!-- Login Form -->
+        <div class="p-8">
+            <form id="loginForm" class="space-y-5">
+                <!-- Error Message -->
+                <div id="errorMessage" class="hidden error-message bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded">
+                    <p>Identifiants incorrects. Veuillez réessayer.</p>
+                </div>
+                
+                <!-- Email Field -->
+                <div class="input-field border rounded-lg px-4 py-3 flex items-center space-x-3 transition-all duration-200">
+                    <i class="fas fa-envelope text-gray-400"></i>
+                    <input type="text" id="email" placeholder="Votre adresse e-mail" 
+                           class="flex-1 outline-none text-gray-700 placeholder-gray-400"
+                           required>
+                </div>
+                
+                <!-- Password Field -->
+                <div class="input-field border rounded-lg px-4 py-3 flex items-center space-x-3 transition-all duration-200">
+                    <i class="fas fa-lock text-gray-400"></i>
+                    <input type="password" id="password" placeholder="Mot de passe" 
+                           class="flex-1 outline-none text-gray-700 placeholder-gray-400"
+                           required>
+                    <button type="button" id="togglePassword" class="text-gray-400 hover:text-gray-600">
+                        <i class="far fa-eye"></i>
+                    </button>
+                </div>
+                
+                <!-- Remember Me & Forgot Password -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="remember" class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                        <label for="remember" class="ml-2 text-sm text-gray-600">Se souvenir de moi</label>
+                    </div>
+                    <a href="#" class="text-sm text-blue-600 hover:text-blue-800 hover:underline">Mot de passe oublié ?</a>
+                </div>
+                
+                <!-- Login Button -->
+                <button type="submit" id="loginBtn" 
+                        class="btn-login w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200 flex items-center justify-center">
+                    <span>Connexion</span>
+                    <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </form>
+            
+            <!-- Role Selection (Demo Only) -->
+            <div class="mt-6 pt-6 border-t border-gray-200">
+                <p class="text-sm text-gray-500 text-center">Démo : Sélectionnez un rôle</p>
+                <div class="flex space-x-3 mt-3">
+                    <button onclick="demoLogin('admin')" class="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm">
+                        <i class="fas fa-user-shield mr-1"></i> Admin
+                    </button>
+                    <button onclick="demoLogin('gerant')" class="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm">
+                        <i class="fas fa-user-tie mr-1"></i> Gérant
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle password visibility
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordField = document.getElementById('password');
+            const icon = this.querySelector('i');
+            
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                passwordField.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        });
+        
+        // Form submission
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Simple validation (demo only)
+            if (!email || !password) {
+                errorMessage.textContent = "Veuillez remplir tous les champs";
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+            
+            // Simulate loading
+            const loginBtn = document.getElementById('loginBtn');
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Connexion en cours...';
+            loginBtn.disabled = true;
+            
+            // Simulate API call
+            setTimeout(() => {
+                // Demo purposes - always show error
+                errorMessage.textContent = "Identifiants incorrects. Veuillez réessayer.";
+                errorMessage.classList.remove('hidden');
+                loginBtn.innerHTML = '<span>Connexion</span><i class="fas fa-arrow-right ml-2"></i>';
+                loginBtn.disabled = false;
+            }, 1500);
+        });
+        
+        // Demo login function
+        function demoLogin(role) {
+            document.getElementById('email').value = role + '@multiservice.com';
+            document.getElementById('password').value = 'password123';
+            
+            // Show success message
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = `Connexion réussie en tant que ${role}. Redirection...`;
+            errorMessage.classList.remove('hidden', 'bg-red-50', 'border-red-500', 'text-red-700');
+            errorMessage.classList.add('bg-green-50', 'border-green-500', 'text-green-700');
+            
+            // Simulate redirect
+            setTimeout(() => {
+                if (role === 'admin') {
+                    window.location.href = 'admin-dashboard.html';
+                } else {
+                    window.location.href = 'gerant-dashboard.html';
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

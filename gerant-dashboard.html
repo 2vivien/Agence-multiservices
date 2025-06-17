@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Agence Multiservice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f5f7fa;
+        }
+        .sidebar {
+            transition: all 0.3s ease;
+        }
+        .sidebar-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .dashboard-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <div class="sidebar bg-indigo-900 text-white w-64 md:w-20 lg:w-64 flex-shrink-0 transition-all duration-300 ease-in-out overflow-y-auto">
+            <div class="p-4 flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-hand-holding-usd text-2xl mr-2"></i>
+                    <span class="text-xl font-semibold hidden md:hidden lg:inline">MultiService</span>
+                </div>
+                <button id="sidebarToggle" class="md:block lg:hidden text-white focus:outline-none">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <nav class="mt-6">
+                <div class="px-4">
+                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer bg-indigo-800">
+                        <i class="fas fa-tachometer-alt mr-3"></i> 
+                        <span class="hidden md:hidden lg:inline">Dashboard</span>
+                    </div>
+                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer mt-2">
+                        <i class="fas fa-exchange-alt mr-3"></i>
+                        <span class="hidden md:hidden lg:inline"><a href="operation.html">Opérations</a></span>
+                    </div>
+                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer mt-2">
+                        <i class="fas fa-clipboard-list mr-3"></i>
+                        <span class="hidden md:hidden lg:inline"><a href="resume_jour.html">Résumé du jour</a></span>
+                    </div>
+                    
+                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer mt-2">
+                        <i class="fas fa-lock mr-3"></i>
+                        <span class="hidden md:hidden lg:inline"><a href="cloture.html">Clôture</a></span>
+                    </div>
+                    
+                </div>
+                <div class="absolute bottom-0 w-full p-4">
+                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer" >
+                        <div id="logoutBtn">
+                            <i class="fas fa-sign-out-alt mr-3"></i>
+                            <span class="hidden md:hidden lg:inline">Déconnexion</span>
+                        </div>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-auto">
+            <!-- Header -->
+            <header class="bg-white shadow-sm py-4 px-6 flex items-center justify-between">
+                <div class="flex items-center">
+                    <button id="mobileSidebarToggle" class="mr-4 text-gray-600 focus:outline-none md:hidden">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="text-xl font-semibold text-gray-800">Dashboard</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button class="text-gray-600 focus:outline-none relative">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="notification-badge bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
+                        </button>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-semibold">JD</div>
+                        <div class="ml-3 hidden md:block">
+                            <p class="text-sm font-medium text-gray-800">Jean Dupont</p>
+                            <p class="text-xs text-gray-500">Gérant</p>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <main class="p-6">
+                <!-- Welcome Section -->
+                <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <h2 class="text-2xl font-semibold text-gray-800">Bonjour, Jean Dupont</h2>
+                            <p class="text-gray-600 mt-1">Aujourd'hui, <span id="currentDate" class="font-medium">Lundi 12 Juin 2023</span></p>
+                        </div>
+                        <button id="startDayBtn" class="mt-4 md:mt-0 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium transition duration-300 flex items-center">
+                            <i class="fas fa-play-circle mr-2"></i> Commencer la journée
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Balance Summary -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                    <div class="dashboard-card bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">MTN</p>
+                                <h3 class="text-2xl font-semibold text-gray-800 mt-1">125,000 FCFA</h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                                <i class="fas fa-mobile-alt text-blue-600 text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <span class="text-green-500 flex items-center">
+                                <i class="fas fa-arrow-up mr-1"></i> 12%
+                            </span>
+                            <span class="text-gray-500 ml-2">vs hier</span>
+                        </div>
+                    </div>
+                    <div class="dashboard-card bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">MOOV</p>
+                                <h3 class="text-2xl font-semibold text-gray-800 mt-1">85,750 FCFA</h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                                <i class="fas fa-sim-card text-purple-600 text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <span class="text-green-500 flex items-center">
+                                <i class="fas fa-arrow-up mr-1"></i> 5%
+                            </span>
+                            <span class="text-gray-500 ml-2">vs hier</span>
+                        </div>
+                    </div>
+                    <div class="dashboard-card bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Western Union</p>
+                                <h3 class="text-2xl font-semibold text-gray-800 mt-1">320,500 FCFA</h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                                <i class="fas fa-globe-americas text-green-600 text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <span class="text-red-500 flex items-center">
+                                <i class="fas fa-arrow-down mr-1"></i> 3%
+                            </span>
+                            <span class="text-gray-500 ml-2">vs hier</span>
+                        </div>
+                    </div>
+                    <div class="dashboard-card bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">RIA</p>
+                                <h3 class="text-2xl font-semibold text-gray-800 mt-1">175,300 FCFA</h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
+                                <i class="fas fa-money-bill-wave text-yellow-600 text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <span class="text-green-500 flex items-center">
+                                <i class="fas fa-arrow-up mr-1"></i> 8%
+                            </span>
+                            <span class="text-gray-500 ml-2">vs hier</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Widgets -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <!-- Best Sales Hour -->
+                    <div class="dashboard-card bg-white rounded-xl shadow-sm p-6 lg:col-span-1">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-800">🔥 Meilleure heure de vente</h3>
+                            <i class="fas fa-fire text-orange-500"></i>
+                        </div>
+                        <div class="mt-4">
+                            <div class="flex items-center justify-center">
+                                <div class="text-4xl font-bold text-indigo-600">15h-16h</div>
+                            </div>
+                            <p class="text-center text-gray-600 mt-2">32% des transactions aujourd'hui</p>
+                        </div>
+                    </div>
+
+                    <!-- Total Collected -->
+                    <div class="dashboard-card bg-white rounded-xl shadow-sm p-6 lg:col-span-1">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-800">📈 Total encaissé</h3>
+                            <i class="fas fa-chart-line text-green-500"></i>
+                        </div>
+                        <div class="mt-4">
+                            <div class="flex items-center justify-center">
+                                <div class="text-4xl font-bold text-green-600">706,550 FCFA</div>
+                            </div>
+                            <p class="text-center text-gray-600 mt-2">+18% par rapport à hier</p>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="dashboard-card bg-white rounded-xl shadow-sm p-6 lg:col-span-1">
+                        <h3 class="text-lg font-semibold text-gray-800">Actions rapides</h3>
+                        <div class="mt-4 grid grid-cols-2 gap-3">
+                            <button class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-3 rounded-lg flex items-center justify-center transition duration-300">
+                                <i class="fas fa-exchange-alt mr-2"></i> Transfert
+                            </button>
+                            <button class="bg-green-50 hover:bg-green-100 text-green-600 px-4 py-3 rounded-lg flex items-center justify-center transition duration-300">
+                                <i class="fas fa-mobile-alt mr-2"></i> Crédit
+                            </button>
+                            <button class="bg-purple-50 hover:bg-purple-100 text-purple-600 px-4 py-3 rounded-lg flex items-center justify-center transition duration-300">
+                                <i class="fas fa-file-invoice-dollar mr-2"></i> Facture
+                            </button>
+                            <button class="bg-yellow-50 hover:bg-yellow-100 text-yellow-600 px-4 py-3 rounded-lg flex items-center justify-center transition duration-300">
+                                <i class="fas fa-plus-circle mr-2"></i> Autre
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="dashboard-card bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800">Dernières opérations</h3>
+                        <button class="text-indigo-600 hover:text-indigo-800 font-medium">Voir tout</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Heure</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Commission</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">10:15</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Transfert WU</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Western Union</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">150,000 FCFA</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">5,000 FCFA</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">11:30</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Crédit MTN</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">MTN</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">10,000 FCFA</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">500 FCFA</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">12:45</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Paiement SBEE</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">SBEE</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">45,000 FCFA</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1,000 FCFA</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">14:20</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Transfert RIA</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">RIA</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">75,000 FCFA</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">3,500 FCFA</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Initial Balance Modal (Hidden by default) -->
+                <div id="initialBalanceModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xl font-semibold text-gray-800">Saisie du solde initial</h3>
+                            <button id="closeModalBtn" class="text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-4">À remplir uniquement au début de la journée</p>
+                        
+                        <form>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 text-sm font-medium mb-2" for="globalBalance">
+                                    Solde global du jour
+                                </label>
+                                <input type="number" id="globalBalance" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label class="block text-gray-700 text-sm font-medium mb-2">
+                                    Solde par service
+                                </label>
+                                <div class="space-y-3">
+                                    <div class="flex items-center">
+                                        <span class="w-24 text-gray-600">MTN</span>
+                                        <input type="number" class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="w-24 text-gray-600">MOOV</span>
+                                        <input type="number" class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="w-24 text-gray-600">CELTIS</span>
+                                        <input type="number" class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="w-24 text-gray-600">Western Union</span>
+                                        <input type="number" class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="w-24 text-gray-600">RIA</span>
+                                        <input type="number" class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-end space-x-3 mt-6">
+                                <button type="button" id="cancelBalanceBtn" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                                    Annuler
+                                </button>
+                                <button type="button" id="validateBalanceBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <i class="fas fa-check-circle mr-2"></i> Valider
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Set current date
+        const now = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('currentDate').textContent = now.toLocaleDateString('fr-FR', options);
+
+        // Toggle sidebar on mobile
+        document.getElementById('mobileSidebarToggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('-translate-x-full');
+        });
+
+        // Toggle sidebar on desktop
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('w-64');
+            document.querySelector('.sidebar').classList.toggle('w-20');
+            
+            // Toggle text visibility in sidebar items
+            const sidebarTexts = document.querySelectorAll('.sidebar-item span');
+            sidebarTexts.forEach(text => {
+                text.classList.toggle('hidden');
+            });
+            
+            // Toggle logo text
+            document.querySelector('.sidebar .text-xl').classList.toggle('hidden');
+        });
+
+        // Show initial balance modal
+        document.getElementById('startDayBtn').addEventListener('click', function() {
+            document.getElementById('initialBalanceModal').classList.remove('hidden');
+        });
+
+
+        // Close modal
+        document.getElementById('closeModalBtn').addEventListener('click', function() {
+            document.getElementById('initialBalanceModal').classList.add('hidden');
+        });
+
+        // Cancel balance
+        document.getElementById('cancelBalanceBtn').addEventListener('click', function() {
+            document.getElementById('initialBalanceModal').classList.add('hidden');
+        });
+
+        // Validate balance
+        document.getElementById('validateBalanceBtn').addEventListener('click', function() {
+            // Here you would normally validate and save the data
+            alert('Soldes initiaux enregistrés avec succès!');
+            document.getElementById('initialBalanceModal').classList.add('hidden');
+            document.getElementById('startDayBtn').textContent = 'Journée en cours';
+            document.getElementById('startDayBtn').classList.remove('bg-indigo-600');
+            document.getElementById('startDayBtn').classList.add('bg-green-600');
+        });
+
+        // Tab functionality for operation types
+        const tabs = document.querySelectorAll('[data-tab]');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+                
+                // Remove active class from all tabs and tab contents
+                document.querySelectorAll('[data-tab]').forEach(t => {
+                    t.classList.remove('bg-indigo-600', 'text-white');
+                    t.classList.add('bg-gray-100', 'text-gray-800');
+                });
+                document.querySelectorAll('.tab-content').forEach(c => {
+                    c.classList.remove('active');
+                });
+                
+                // Add active class to current tab and corresponding content
+                this.classList.remove('bg-gray-100', 'text-gray-800');
+                this.classList.add('bg-indigo-600', 'text-white');
+                document.getElementById(tabId + '-content').classList.add('active');
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+    // Gestion de la sidebar active
+    const currentPage = window.location.pathname.split('/').pop();
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+        const link = item.querySelector('a');
+        if (link && link.getAttribute('href') === currentPage) {
+            item.classList.add('active');
+        } else if (item.getAttribute('data-page') === currentPage && !link) {
+            item.classList.add('active');
+        }
+    });
+
+    // Gestion de la déconnexion
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Création de la modal de confirmation
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-sm w-full">
+                    <h3 class="text-lg font-bold mb-4">Confirmer la déconnexion</h3>
+                    <p class="mb-6">Êtes-vous sûr de vouloir vous déconnecter ?</p>
+                    <div class="flex justify-end space-x-3">
+                        <button id="cancelLogout" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                            Annuler
+                        </button>
+                        <button id="confirmLogout" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                            Se déconnecter
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Gestion des boutons de la modal
+            document.getElementById('cancelLogout').addEventListener('click', () => {
+                document.body.removeChild(modal);
+            });
+            
+            document.getElementById('confirmLogout').addEventListener('click', () => {
+                logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Déconnexion...';
+                logoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                
+                // Redirection après délai
+                setTimeout(() => {
+                    window.location.href = 'index.html'; // Remplacez par votre URL de déconnexion
+                }, 1000);
+            });
+        });
+    }
+});
+    </script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accès Refusé (403)</title>
+    <style>
+        /* --- Style Général --- */
+        :root {
+            --brand-color: #2563EB;
+            --dark-text: #1F2937;
+            --light-text: #4B5563;
+            --bg-color: #ffffff;
+            --surface-color: #F9FAFB;
+            --border-color: #E5E7EB;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes gentleWobble {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-2deg); }
+            75% { transform: rotate(2deg); }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            background-color: var(--bg-color);
+            color: var(--dark-text);
+            display: grid;
+            place-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* --- Conteneur Principal --- */
+        .container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            padding: 40px 20px;
+            border-radius: 16px;
+            background-color: var(--bg-color);
+        }
+        
+        /* --- Illustration SVG --- */
+        .illustration {
+            width: 120px;
+            height: auto;
+            margin-bottom: 2rem;
+            animation: gentleWobble 2.5s infinite ease-in-out;
+        }
+
+        /* --- Typographie --- */
+        h1 {
+            font-size: clamp(2rem, 5vw, 2.75rem); /* Responsive font size */
+            font-weight: 800;
+            color: var(--dark-text);
+            margin: 0 0 0.5rem 0;
+        }
+
+        .explanation {
+            font-size: 1.125rem;
+            color: var(--light-text);
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        /* --- Bloc d'informations sur les rôles --- */
+        .roles {
+            background-color: var(--surface-color);
+            border-left: 4px solid var(--brand-color);
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin: 2rem auto;
+            text-align: left;
+            max-width: 400px;
+        }
+
+        .roles p {
+            margin: 0.5rem 0;
+            font-size: 1rem;
+            color: var(--dark-text);
+        }
+
+        .roles strong {
+            font-weight: 600;
+            color: var(--brand-color);
+        }
+
+        /* --- Boutons d'action --- */
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 2.5rem;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 0.875rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .button-primary {
+            background-color: var(--brand-color);
+            color: white;
+        }
+        
+        .button-secondary {
+            background-color: transparent;
+            color: var(--brand-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .button-secondary:hover {
+             background-color: var(--surface-color);
+        }
+
+        .button-tertiary {
+            background: none;
+            color: var(--light-text);
+            font-weight: 500;
+            text-decoration: underline;
+        }
+        .button-tertiary:hover {
+            transform: none;
+            box-shadow: none;
+            color: var(--dark-text);
+        }
+
+        /* --- Responsive pour les écrans plus larges --- */
+        @media (min-width: 640px) {
+            .actions {
+                flex-direction: row;
+                justify-content: center;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <svg class="illustration" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C9.23858 2 7 4.23858 7 7V11H6C4.89543 11 4 11.8954 4 13V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V13C20 11.8954 19.1046 11 18 11H17V7C17 4.23858 14.7614 2 12 2ZM9 7C9 5.34315 10.3431 4 12 4C13.6569 4 15 5.34315 15 7V11H9V7Z" fill="#2563EB"/>
+            <path d="M6 11H18C19.1046 11 20 11.8954 20 13V20C20 21.1046 19.1046 22 18 22H6C4.89543 22 4 21.1046 4 20V13C4 11.8954 4.89543 11 6 11Z" fill="#E0E7FF"/>
+            <path d="M12 15C11.4477 15 11 15.4477 11 16V18C11 18.5523 11.4477 19 12 19C12.5523 19 13 18.5523 13 18V16C13 15.4477 12.5523 15 12 15Z" fill="#2563EB"/>
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M2.29289 2.29289C2.68342 1.90237 3.31658 1.90237 3.70711 2.29289L21.7071 20.2929C22.0976 20.6834 22.0976 21.3166 21.7071 21.7071C21.3166 22.0976 20.6834 22.0976 20.2929 21.7071L2.29289 3.70711C1.90237 3.31658 1.90237 2.68342 2.29289 2.29289Z" fill="#2563EB" opacity="0.3"/>
+        </svg>
+
+        <h1>⛔ Accès refusé</h1>
+
+        <p class="explanation">
+            Vous n’avez pas les autorisations nécessaires pour accéder à cette page.
+        </p>
+        
+        <div class="roles">
+            <p>Rôle requis : <strong>[Administrateur]</strong></p>
+            <p>Votre rôle : <strong>[Gérant]</strong></p>
+        </div>
+
+        <div class="actions">
+            <a href="/dashboard" class="button button-primary">Retour au tableau de bord</a>
+            
+            <a href="/logout" class="button button-secondary">Se déconnecter</a>
+        </div>
+        
+        <div class="actions">
+             <a href="mailto:support@votreagence.com" class="button button-tertiary">Contacter un administrateur</a>
+        </div>
+
+    </div>
+
+</body>
+</html>

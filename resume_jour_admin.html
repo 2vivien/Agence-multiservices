@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Résumé du jour | Dashboard Agence Multiservice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f5f7fa;
+        }
+        .sidebar {
+            transition: all 0.3s ease;
+        }
+        .sidebar-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .sidebar-item.active {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+        }
+        :root {
+            --primary: #2563EB;
+            --primary-hover: #3B82F6;
+            --success: #22C55E;
+            --error: #F87171;
+            --warning: #FACC15;
+            --text: #1E293B;
+            --bg-light: #F9FAFB;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text);
+            background-color: white;
+        }
+        
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .highlight-amount {
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .error-row {
+            background-color: rgba(248, 113, 113, 0.1);
+            border-left: 3px solid var(--error);
+        }
+        
+        .table-row:hover {
+            background-color: rgba(249, 250, 251, 0.8);
+            border-left: 3px solid var(--primary);
+            cursor: pointer;
+        }
+        
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .table-header, .table-row {
+                display: none;
+            }
+            
+            .mobile-card {
+                display: block;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .mobile-card {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <div class="sidebar bg-indigo-900 text-white w-64 md:w-20 lg:w-64 flex-shrink-0 transition-all duration-300 ease-in-out overflow-y-auto">
+            <div class="p-4 flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-hand-holding-usd text-2xl mr-2"></i>
+                    <span class="text-xl font-semibold hidden md:hidden lg:inline">MultiService</span>
+                </div>
+                <button id="sidebarToggle" class="md:block lg:hidden text-white focus:outline-none">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <nav class="mt-6">
+                <div class="px-4">
+                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer" data-page="gerant-dashboard.html">
+                        <i class="fas fa-tachometer-alt mr-3"></i> 
+                        <span class="hidden md:hidden lg:inline"><a href="admin-dashboard.html">Dashboard</a></span>
+                    </div>
+                    
+                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer mt-2" data-page="resume_jour.html">
+                        <i class="fas fa-clipboard-list mr-3"></i>
+                        <span class="hidden md:hidden lg:inline"><a href="resume_jour_admin.html">Résumé du jour</a></span>
+                    </div>
+                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer mt-2" data-page="statistique.html">
+                        <i class="fas fa-chart-line mr-3"></i>
+                        <span class="hidden md:hidden lg:inline"><a href="statistique.html">Statistiques</a></span>
+                    </div>
+                    
+                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer mt-2" data-page="parametre.html">
+                        <i class="fas fa-cog mr-3"></i>
+                        <span class="hidden md:hidden lg:inline"><a href="parametre.html">Paramètres</a></span>
+                    </div>
+                </div>
+                <div class="absolute bottom-0 w-full p-4">
+                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer" >
+                        <div id="logoutBtn">
+                            <i class="fas fa-sign-out-alt mr-3"></i>
+                            <span class="hidden md:hidden lg:inline">Déconnexion</span>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-auto">
+            <!-- Header -->
+            <header class="bg-white shadow-sm py-4 px-6 flex items-center justify-between">
+                <div class="flex items-center">
+                    <button id="mobileSidebarToggle" class="mr-4 text-gray-600 focus:outline-none md:hidden">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="text-xl font-semibold text-gray-800">Résumé du jour</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button class="text-gray-600 focus:outline-none relative">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="notification-badge bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
+                        </button>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-semibold">AD</div>
+                        <div class="ml-3 hidden md:block">
+                            <p class="text-sm font-medium text-gray-800">Admin</p>
+                            <p class="text-xs text-gray-500">Administrateur</p>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <main class="p-6">
+                <div class="max-w-7xl mx-auto">
+                    <!-- Header -->
+                    <div class="flex justify-between items-center mb-6">
+                        <h1 class="text-2xl md:text-3xl font-bold text-gray-800">
+                            Résumé des opérations de la journée – <span id="current-date" class="text-blue-600"></span>
+                        </h1>
+                        <div class="flex space-x-2">
+                            <button class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center">
+                                <i class="fas fa-file-pdf mr-2"></i> PDF
+                            </button>
+                            <button class="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition flex items-center">
+                                <i class="fas fa-file-excel mr-2"></i> Excel
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Bar -->
+                    <div class="bg-white p-4 rounded-lg card-shadow mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </div>
+                                <input type="text" class="pl-10 w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Recherche...">
+                            </div>
+                            
+                            <div>
+                                <input type="date" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" id="date-filter">
+                            </div>
+                            
+                            <div>
+                                <select class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">Tous les types</option>
+                                    <option value="transfert">Transfert RIA</option>
+                                    <option value="credit">Crédit MTN</option>
+                                    <option value="retrait">Retrait Orange Money</option>
+                                    <option value="paiement">Paiement facture</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <button class="w-full p-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center justify-center">
+                                    <i class="fas fa-sync-alt mr-2"></i> Rafraîchir
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Stats -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-white p-4 rounded-lg card-shadow stat-card">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-gray-500 text-sm">Total encaissé</p>
+                                    <p class="text-2xl font-bold">245,750 FCFA</p>
+                                </div>
+                                <div class="bg-blue-100 p-3 rounded-full">
+                                    <i class="fas fa-coins text-blue-600 text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="mt-2 text-sm text-green-600 flex items-center">
+                                <i class="fas fa-arrow-up mr-1"></i> 12% vs hier
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-4 rounded-lg card-shadow stat-card">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-gray-500 text-sm">Nombre d'opérations</p>
+                                    <p class="text-2xl font-bold">28</p>
+                                </div>
+                                <div class="bg-green-100 p-3 rounded-full">
+                                    <i class="fas fa-list-alt text-green-600 text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="mt-2 text-sm text-blue-600 flex items-center">
+                                <i class="fas fa-clock mr-1"></i> Pic à 11:45
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-4 rounded-lg card-shadow stat-card">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-gray-500 text-sm">Commission moyenne</p>
+                                    <p class="text-2xl font-bold">1,250 FCFA</p>
+                                </div>
+                                <div class="bg-yellow-100 p-3 rounded-full">
+                                    <i class="fas fa-percentage text-yellow-600 text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <a href="#" class="text-sm text-blue-600 hover:underline flex items-center">
+                                    <i class="fas fa-chart-line mr-1"></i> Voir statistiques
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Desktop Table -->
+                    <div class="bg-white rounded-lg card-shadow overflow-hidden mb-6">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr class="table-header">
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Heure</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Réseau</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Commission</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <!-- Sample Data Rows -->
+                                    <tr class="table-row">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">08:15</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">Transfert RIA</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">Orange Money</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium highlight-amount">25,000 FCFA</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">500 FCFA</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">M. Diallo</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <button class="text-blue-600 hover:text-blue-800 mr-3"><i class="fas fa-edit"></i></button>
+                                            <button class="text-red-600 hover:text-red-800"><i class="fas fa-trash-alt"></i></button>
+                                        </td>
+                                    </tr>
+                                    
+                                    <tr class="table-row">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">09:30</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">Crédit MTN</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">MTN Mobile Money</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">10,000 FCFA</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">200 FCFA</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">Mme Traoré</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Urgent</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <button class="text-blue-600 hover:text-blue-800 mr-3"><i class="fas fa-edit"></i></button>
+                                            <button class="text-red-600 hover:text-red-800"><i class="fas fa-trash-alt"></i></button>
+                                        </td>
+                                    </tr>
+                                    
+                                    <tr class="table-row error-row">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">10:45</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">Retrait</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">Wave</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">15,000 FCFA</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">1,500 FCFA</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">-</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Commission élevée</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <button class="text-blue-600 hover:text-blue-800 mr-3"><i class="fas fa-edit"></i></button>
+                                            <button class="text-red-600 hover:text-red-800"><i class="fas fa-trash-alt"></i></button>
+                                        </td>
+                                    </tr>
+                                    
+                                    <tr class="table-row">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">11:20</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">Paiement facture</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">CIE</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium highlight-amount">75,000 FCFA</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">1,000 FCFA</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">M. Koné</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Facture 12345</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <button class="text-blue-600 hover:text-blue-800 mr-3"><i class="fas fa-edit"></i></button>
+                                            <button class="text-red-600 hover:text-red-800"><i class="fas fa-trash-alt"></i></button>
+                                        </td>
+                                    </tr>
+                                    
+                                    <tr class="table-row">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">14:10</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">Transfert RIA</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">Orange Money</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">30,000 FCFA</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">600 FCFA</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">M. Diakité</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Transfert Dakar</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <button class="text-blue-600 hover:text-blue-800 mr-3"><i class="fas fa-edit"></i></button>
+                                            <button class="text-red-600 hover:text-red-800"><i class="fas fa-trash-alt"></i></button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Mobile Cards -->
+                    <div class="space-y-3 mb-6">
+                        <!-- Sample Mobile Card 1 -->
+                        <div class="mobile-card bg-white p-4 rounded-lg card-shadow">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="flex items-center">
+                                        <span class="font-medium mr-2">08:15</span>
+                                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Transfert RIA</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <p class="text-sm text-gray-600">Orange Money</p>
+                                        <p class="font-bold text-lg highlight-amount">25,000 FCFA</p>
+                                        <p class="text-sm">Commission: 500 FCFA</p>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button class="text-blue-600"><i class="fas fa-edit"></i></button>
+                                    <button class="text-red-600"><i class="fas fa-trash-alt"></i></button>
+                                </div>
+                            </div>
+                            <div class="mt-2 text-sm text-gray-500">
+                                Client: M. Diallo
+                            </div>
+                        </div>
+                        
+                        <!-- Sample Mobile Card 2 (Error) -->
+                        <div class="mobile-card bg-white p-4 rounded-lg card-shadow border-l-4 border-red-500">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="flex items-center">
+                                        <span class="font-medium mr-2">10:45</span>
+                                        <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">Retrait</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <p class="text-sm text-gray-600">Wave</p>
+                                        <p class="font-bold text-lg">15,000 FCFA</p>
+                                        <p class="text-sm text-red-600">Commission: 1,500 FCFA</p>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button class="text-blue-600"><i class="fas fa-edit"></i></button>
+                                    <button class="text-red-600"><i class="fas fa-trash-alt"></i></button>
+                                </div>
+                            </div>
+                            <div class="mt-2 text-sm text-gray-500">
+                                Note: Commission élevée
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Summary Footer -->
+                    <div class="bg-white p-4 rounded-lg card-shadow">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="border-r border-gray-200 pr-4">
+                                <p class="text-sm text-gray-500">Total du jour</p>
+                                <p class="text-xl font-bold">245,750 FCFA</p>
+                            </div>
+                            <div class="border-r border-gray-200 pr-4">
+                                <p class="text-sm text-gray-500">Commission moyenne</p>
+                                <p class="text-xl font-bold">1,250 FCFA</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Opérations</p>
+                                <p class="text-xl font-bold">28 transactions</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="flex justify-between items-center mt-6">
+                        <div class="text-sm text-gray-500">
+                            Affichage de 1 à 5 sur 28 opérations
+                        </div>
+                        <div class="flex space-x-1">
+                            <button class="px-3 py-1 bg-gray-200 rounded-md text-gray-700 hover:bg-gray-300">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button class="px-3 py-1 bg-blue-600 text-white rounded-md">1</button>
+                            <button class="px-3 py-1 bg-gray-200 rounded-md text-gray-700 hover:bg-gray-300">2</button>
+                            <button class="px-3 py-1 bg-gray-200 rounded-md text-gray-700 hover:bg-gray-300">3</button>
+                            <button class="px-3 py-1 bg-gray-200 rounded-md text-gray-700 hover:bg-gray-300">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Set current date
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('current-date').textContent = today.toLocaleDateString('fr-FR', options);
+            
+            // Set date picker to today
+            const dateStr = today.toISOString().split('T')[0];
+            document.getElementById('date-filter').value = dateStr;
+            
+            // Highlight rows with amount > 50,000
+            document.querySelectorAll('.table-row').forEach(row => {
+                const amountCell = row.querySelector('.highlight-amount');
+                if (amountCell) {
+                    const amountText = amountCell.textContent.replace(/[^0-9]/g, '');
+                    const amount = parseInt(amountText);
+                    if (amount > 50000) {
+                        row.classList.add('highlight-amount');
+                    }
+                }
+            });
+        });
+        
+        // Confirm delete action
+        function confirmDelete() {
+            return confirm('Êtes-vous sûr de vouloir supprimer cette opération ? Cette action est irréversible.');
+        }
+
+        // Toggle sidebar on mobile
+        document.getElementById('mobileSidebarToggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('-translate-x-full');
+        });
+
+        // Toggle sidebar on desktop
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('w-64');
+            document.querySelector('.sidebar').classList.toggle('w-20');
+            
+            // Toggle text visibility in sidebar items
+            const sidebarTexts = document.querySelectorAll('.sidebar-item span');
+            sidebarTexts.forEach(text => {
+                text.classList.toggle('hidden');
+            });
+            
+            // Toggle logo text
+            document.querySelector('.sidebar .text-xl').classList.toggle('hidden');
+        });
+
+        
+
+        // Highlight active sidebar item
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPage = window.location.pathname.split('/').pop();
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                const link = item.querySelector('a');
+                if (link && link.getAttribute('href') === currentPage) {
+                    item.classList.add('active');
+                } else if (item.getAttribute('data-page') === currentPage && !link) {
+                    item.classList.add('active');
+                }
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+    // Gestion de la sidebar active
+    const currentPage = window.location.pathname.split('/').pop();
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+        const link = item.querySelector('a');
+        if (link && link.getAttribute('href') === currentPage) {
+            item.classList.add('active');
+        } else if (item.getAttribute('data-page') === currentPage && !link) {
+            item.classList.add('active');
+        }
+    });
+
+    // Gestion de la déconnexion
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Création de la modal de confirmation
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-sm w-full">
+                    <h3 class="text-lg font-bold mb-4">Confirmer la déconnexion</h3>
+                    <p class="mb-6">Êtes-vous sûr de vouloir vous déconnecter ?</p>
+                    <div class="flex justify-end space-x-3">
+                        <button id="cancelLogout" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                            Annuler
+                        </button>
+                        <button id="confirmLogout" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                            Se déconnecter
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Gestion des boutons de la modal
+            document.getElementById('cancelLogout').addEventListener('click', () => {
+                document.body.removeChild(modal);
+            });
+            
+            document.getElementById('confirmLogout').addEventListener('click', () => {
+                logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Déconnexion...';
+                logoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                
+                // Redirection après délai
+                setTimeout(() => {
+                    window.location.href = 'index.html'; // Remplacez par votre URL de déconnexion
+                }, 1000);
+            });
+        });
+    }
+});
+    </script>
+</body>
+</html>

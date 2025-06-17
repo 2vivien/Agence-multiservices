@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - Agence Multiservice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f5f7fa;
+        }
+        .sidebar {
+            transition: all 0.3s ease;
+        }
+        .sidebar-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .dashboard-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <div class="sidebar bg-indigo-900 text-white w-64 md:w-20 lg:w-64 flex-shrink-0 transition-all duration-300 ease-in-out overflow-y-auto">
+            <div class="p-4 flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-hand-holding-usd text-2xl mr-2"></i>
+                    <span class="text-xl font-semibold hidden md:hidden lg:inline">MultiService</span>
+                </div>
+                <button id="sidebarToggle" class="md:block lg:hidden text-white focus:outline-none">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <nav class="mt-6">
+                <div class="px-4">
+                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer mt-2 bg-indigo-800">
+                        <i class="fas fa-user-shield mr-3"></i>
+                        <span class="hidden md:hidden lg:inline"><a href="admin-dashboard.html">Administration</a></span>
+                    </div>
+                    
+                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer mt-2">
+                        <i class="fas fa-clipboard-list mr-3"></i>
+                        <span class="hidden md:hidden lg:inline"><a href="resume_jour_admin.html">Résumé du jour</a></span>
+                    </div>
+                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer mt-2">
+                        <i class="fas fa-chart-line mr-3"></i>
+                        <span class="hidden md:hidden lg:inline"><a href="statistique.html">Statistiques</a></span>
+                    </div>
+                    
+                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer mt-2" data-page="parametre.html">
+                        <i class="fas fa-cog mr-3"></i>
+                        <span class="hidden md:hidden lg:inline"><a href="parametre.html">Paramètres</a></span>
+                    </div>
+                </div>
+                <div class="absolute bottom-0 w-full p-4">
+                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer" >
+                        <div id="logoutBtn">
+                            <i class="fas fa-sign-out-alt mr-3"></i>
+                            <span class="hidden md:hidden lg:inline">Déconnexion</span>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-auto">
+            <!-- Header -->
+            <header class="bg-white shadow-sm py-4 px-6 flex items-center justify-between">
+                <div class="flex items-center">
+                    <button id="mobileSidebarToggle" class="mr-4 text-gray-600 focus:outline-none md:hidden">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="text-xl font-semibold text-gray-800">Dashboard Admin</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button class="text-gray-600 focus:outline-none relative">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="notification-badge bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
+                        </button>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-semibold">AD</div>
+                        <div class="ml-3 hidden md:block">
+                            <p class="text-sm font-medium text-gray-800">Admin</p>
+                            <p class="text-xs text-gray-500">Administrateur</p>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="container mx-auto px-4 py-6">
+                <!-- Quick Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Transactions Today -->
+                    <div class="bg-white rounded-xl shadow-md p-6 transition-all duration-300 card-hover cursor-pointer hover:border-l-4 hover:border-blue-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm">Transactions aujourd'hui</p>
+                                <h3 class="text-2xl font-bold mt-1">142</h3>
+                                <p class="text-green-500 text-sm mt-2">+12% vs hier</p>
+                            </div>
+                            <div class="bg-blue-100 p-3 rounded-lg">
+                                <i class="fas fa-exchange-alt text-blue-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Total Amount -->
+                    <div class="bg-white rounded-xl shadow-md p-6 transition-all duration-300 card-hover cursor-pointer hover:border-l-4 hover:border-green-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm">Montant total encaissé</p>
+                                <h3 class="text-2xl font-bold mt-1">4,850,000 FCFA</h3>
+                                <p class="text-green-500 text-sm mt-2">+8% vs hier</p>
+                            </div>
+                            <div class="bg-green-100 p-3 rounded-lg">
+                                <i class="fas fa-money-bill-wave text-green-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Active Managers -->
+                    <div class="bg-white rounded-xl shadow-md p-6 transition-all duration-300 card-hover cursor-pointer hover:border-l-4 hover:border-purple-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm">Gérants actifs</p>
+                                <h3 class="text-2xl font-bold mt-1">3/4</h3>
+                                <p class="text-gray-500 text-sm mt-2">en ligne actuellement</p>
+                            </div>
+                            <div class="bg-purple-100 p-3 rounded-lg">
+                                <i class="fas fa-users text-purple-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Today's Alerts -->
+                    <div class="bg-white rounded-xl shadow-md p-6 transition-all duration-300 card-hover cursor-pointer hover:border-l-4 hover:border-red-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm">Alertes du jour</p>
+                                <h3 class="text-2xl font-bold mt-1">2</h3>
+                                <p class="text-red-500 text-sm mt-2">écarts à vérifier</p>
+                            </div>
+                            <div class="bg-red-100 p-3 rounded-lg">
+                                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <!-- Operations Distribution -->
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-lg font-bold">Répartition des opérations</h2>
+                            <select class="bg-gray-100 border border-gray-300 rounded-lg px-3 py-1 text-sm focus:outline-none">
+                                <option>Aujourd'hui</option>
+                                <option>Cette semaine</option>
+                                <option>Ce mois</option>
+                            </select>
+                        </div>
+                        <div class="h-64">
+                            <canvas id="operationsChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Activity Peak -->
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-lg font-bold">Pic d'activité par heure</h2>
+                            <select class="bg-gray-100 border border-gray-300 rounded-lg px-3 py-1 text-sm focus:outline-none">
+                                <option>Aujourd'hui</option>
+                                <option>Hier</option>
+                                <option>Semaine dernière</option>
+                            </select>
+                        </div>
+                        <div class="h-64">
+                            <canvas id="activityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Operations -->
+                <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold">Journal des dernières opérations</h2>
+                        <div class="flex space-x-2">
+                            <select class="bg-gray-100 border border-gray-300 rounded-lg px-3 py-1 text-sm focus:outline-none">
+                                <option>Tous les gérants</option>
+                                <option>Julie</option>
+                                <option>Daniel</option>
+                                <option>Marc</option>
+                                <option>Sophie</option>
+                            </select>
+                            <select class="bg-gray-100 border border-gray-300 rounded-lg px-3 py-1 text-sm focus:outline-none">
+                                <option>Tous les types</option>
+                                <option>Transfert</option>
+                                <option>Retrait</option>
+                                <option>Crédit</option>
+                                <option>Facture</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto scrollbar-hide">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Heure</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gérant</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Réseau</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Commission</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">10:43</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Julie</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Transfert</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">RIA</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">50 000 FCFA</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1 000 FCFA</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                            <i class="fas fa-check mr-1"></i> Validé
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">11:21</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Daniel</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Crédit</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">MTN</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">5 000 FCFA</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">500 FCFA</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                            <i class="fas fa-check mr-1"></i> Validé
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">12:05</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Marc</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Retrait</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">WU</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">75 000 FCFA</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1 500 FCFA</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                            <i class="fas fa-clock mr-1"></i> En attente
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">13:42</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Sophie</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Facture</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">CIE</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">32 000 FCFA</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">800 FCFA</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                            <i class="fas fa-check mr-1"></i> Validé
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">14:30</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Daniel</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Crédit</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">MOOV</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">10 000 FCFA</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1 000 FCFA</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                            <i class="fas fa-times mr-1"></i> Échec
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Balances and Alerts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <!-- Balances -->
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <h2 class="text-lg font-bold mb-4">État des soldes</h2>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gérant</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">MTN</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">MOOV</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CELTIS</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">WU</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RIA</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Écart</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">Julie</td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                OK
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                OK
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                ❌
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                OK
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                OK
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-red-600 font-medium">-3 000 FCFA</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">Daniel</td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                OK
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                OK
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                OK
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                OK
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                OK
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-green-600 font-medium">0 FCFA</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">Marc</td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                ?
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                OK
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                OK
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                OK
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                ?
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">Non vérifié</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Alerts -->
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-lg font-bold">Alertes & Suivi</h2>
+                            <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">3 non résolues</span>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <!-- Alert 1 -->
+                            <div class="border-l-4 border-red-500 pl-4 py-2">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="font-medium text-red-600 flex items-center">
+                                            <i class="fas fa-exclamation-circle mr-2"></i> Journée non clôturée
+                                        </h3>
+                                        <p class="text-sm text-gray-600 mt-1">Julie n'a pas clôturé sa journée hier</p>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded hover:bg-red-200">
+                                            <i class="fas fa-phone-alt mr-1"></i> Contacter
+                                        </button>
+                                        <button class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200">
+                                            <i class="fas fa-check mr-1"></i> Résoudre
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Alert 2 -->
+                            <div class="border-l-4 border-yellow-500 pl-4 py-2">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="font-medium text-yellow-600 flex items-center">
+                                            <i class="fas fa-exclamation-triangle mr-2"></i> Opérations non saisies
+                                        </h3>
+                                        <p class="text-sm text-gray-600 mt-1">3 transactions manquantes pour Daniel ce matin</p>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button class="text-xs bg-yellow-100 text-yellow-600 px-2 py-1 rounded hover:bg-yellow-200">
+                                            <i class="fas fa-search mr-1"></i> Vérifier
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Alert 3 -->
+                            <div class="border-l-4 border-blue-500 pl-4 py-2">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="font-medium text-blue-600 flex items-center">
+                                            <i class="fas fa-info-circle mr-2"></i> Clôture avec notes
+                                        </h3>
+                                        <p class="text-sm text-gray-600 mt-1">Marc a signalé un problème avec CELTIS</p>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200">
+                                            <i class="fas fa-eye mr-1"></i> Voir
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition-colors">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Ajouter un gérant</span>
+                    </button>
+                    <button class="bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition-colors">
+                        <i class="fas fa-wallet"></i>
+                        <span>Voir les soldes</span>
+                    </button>
+                    <button class="bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition-colors">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Rapport hebdo</span>
+                    </button>
+                    <button class="bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition-colors">
+                        <i class="fas fa-cog"></i>
+                        <span>Paramètres</span>
+                    </button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Fonction pour initialiser les graphiques
+        function initCharts() {
+            // Graphique des opérations
+            const operationsCtx = document.getElementById('operationsChart').getContext('2d');
+            const operationsChart = new Chart(operationsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Transferts', 'Retraits', 'Crédit MTN', 'Crédit MOOV', 'Crédit CELTIS', 'Factures'],
+                    datasets: [{
+                        data: [35, 25, 20, 10, 5, 5],
+                        backgroundColor: [
+                            '#3B82F6',
+                            '#10B981',
+                            '#F59E0B',
+                            '#6366F1',
+                            '#EC4899',
+                            '#8B5CF6'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+            
+            // Graphique d'activité
+            const activityCtx = document.getElementById('activityChart').getContext('2d');
+            const activityChart = new Chart(activityCtx, {
+                type: 'line',
+                data: {
+                    labels: ['8h', '9h', '10h', '11h', '12h', '13h', '14h', '15h', '16h', '17h'],
+                    datasets: [{
+                        label: 'Transactions par heure',
+                        data: [12, 19, 25, 32, 40, 28, 35, 42, 38, 30],
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderColor: '#3B82F6',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Fonction pour mettre à jour la date et l'heure
+        function updateDateTime() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('current-date').textContent = now.toLocaleDateString('fr-FR', options);
+            document.getElementById('current-time').textContent = now.toLocaleTimeString('fr-FR');
+        }
+
+        // Fonction pour gérer le toggle de la sidebar
+        function setupSidebarToggle() {
+            // Toggle sidebar on mobile
+            document.getElementById('mobileSidebarToggle').addEventListener('click', function() {
+                document.querySelector('.sidebar').classList.toggle('-translate-x-full');
+            });
+
+            // Toggle sidebar on desktop
+            document.getElementById('sidebarToggle').addEventListener('click', function() {
+                document.querySelector('.sidebar').classList.toggle('w-64');
+                document.querySelector('.sidebar').classList.toggle('w-20');
+                
+                // Toggle text visibility in sidebar items
+                const sidebarTexts = document.querySelectorAll('.sidebar-item span');
+                sidebarTexts.forEach(text => {
+                    text.classList.toggle('hidden');
+                });
+                
+                // Toggle logo text
+                document.querySelector('.sidebar .text-xl').classList.toggle('hidden');
+            });
+        }
+
+        // Fonction pour mettre en surbrillance l'élément actif de la sidebar
+        function highlightActiveSidebarItem() {
+            const currentPath = window.location.pathname.split('/').pop();
+            const sidebarItems = document.querySelectorAll('.sidebar-item a');
+            
+            sidebarItems.forEach(item => {
+                const href = item.getAttribute('href');
+                if (href === currentPath) {
+                    item.closest('.sidebar-item').classList.add('bg-indigo-800');
+                } else {
+                    item.closest('.sidebar-item').classList.remove('bg-indigo-800');
+                }
+            });
+            
+            // Gestion spéciale pour le dashboard (racine ou gerant-dashboard.html)
+            if (currentPath === '' || currentPath === 'gerant-dashboard.html') {
+                document.querySelector('.sidebar-item:first-child').classList.add('bg-indigo-800');
+            } else if (currentPath === 'admin-dashboard.html') {
+                document.querySelector('.sidebar-item a[href="admin-dashboard.html"]').closest('.sidebar-item').classList.add('bg-indigo-800');
+            }
+        }
+
+        // Initialisation lorsque le DOM est chargé
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialiser les graphiques
+            initCharts();
+            
+            // Configurer la date et l'heure
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            
+            // Configurer le toggle de la sidebar
+            setupSidebarToggle();
+            
+                        // Mettre en surbrillance l'élément actif de la sidebar
+            highlightActiveSidebarItem();
+
+            // Gestion des changements de période pour les graphiques
+            document.querySelector('#operationsChart').parentElement.previousElementSibling.querySelector('select')
+                .addEventListener('change', function() {
+                    // Exemple de données pour différentes périodes
+                    const dataMap = {
+                        "Aujourd'hui": [35, 25, 20, 10, 5, 5],
+                        "Cette semaine": [120, 85, 70, 35, 20, 15],
+                        "Ce mois": [450, 320, 280, 140, 80, 60]
+                    };
+                    
+                    operationsChart.data.datasets[0].data = dataMap[this.value];
+                    operationsChart.update();
+                });
+
+            document.querySelector('#activityChart').parentElement.previousElementSibling.querySelector('select')
+                .addEventListener('change', function() {
+                    // Exemple de données pour différentes périodes
+                    const dataMap = {
+                        "Aujourd'hui": [12, 19, 25, 32, 40, 28, 35, 42, 38, 30],
+                        "Hier": [8, 15, 22, 30, 35, 25, 20, 18, 15, 10],
+                        "Semaine dernière": [20, 30, 40, 50, 60, 55, 45, 40, 35, 25]
+                    };
+                    
+                    activityChart.data.datasets[0].data = dataMap[this.value];
+                    activityChart.update();
+                });
+
+            // Animation des cartes au survol
+            const cards = document.querySelectorAll('.card-hover');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', () => {
+                    card.style.transition = 'all 0.3s ease';
+                });
+            });
+
+            // Gestion des notifications
+            const notificationBtn = document.querySelector('.relative button');
+            if (notificationBtn) {
+                notificationBtn.addEventListener('click', function() {
+                    const badge = this.querySelector('.notification-badge');
+                    if (badge) {
+                        badge.style.display = 'none';
+                    }
+                });
+            }
+
+            // Gestion des boutons d'action rapide
+            const quickActionBtns = document.querySelectorAll('.grid.grid-cols-2 button');
+            quickActionBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const action = this.querySelector('span').textContent;
+                    alert(`Action "${action}" déclenchée !`);
+                });
+            });
+        });
+
+        // Fonction pour charger des données dynamiques (exemple)
+        function loadDynamicData() {
+            // Simulation de chargement de données
+            setTimeout(() => {
+                // Mettre à jour les cartes de résumé
+                document.querySelector('.card-hover:nth-child(1) h3').textContent = '156';
+                document.querySelector('.card-hover:nth-child(2) h3').textContent = '5,120,000 FCFA';
+                
+                // Ajouter une animation de confirmation
+                const confirmation = document.createElement('div');
+                confirmation.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg';
+                confirmation.textContent = 'Données mises à jour !';
+                document.body.appendChild(confirmation);
+                
+                setTimeout(() => {
+                    confirmation.remove();
+                }, 3000);
+            }, 1500);
+        }
+
+        // Charger des données toutes les 30 secondes (exemple)
+        setInterval(loadDynamicData, 30000);
+
+        // Amélioration de l'accessibilité
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    this.click();
+                }
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+    // Gestion de la sidebar active
+    const currentPage = window.location.pathname.split('/').pop();
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+        const link = item.querySelector('a');
+        if (link && link.getAttribute('href') === currentPage) {
+            item.classList.add('active');
+        } else if (item.getAttribute('data-page') === currentPage && !link) {
+            item.classList.add('active');
+        }
+    });
+
+    // Gestion de la déconnexion
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Création de la modal de confirmation
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-sm w-full">
+                    <h3 class="text-lg font-bold mb-4">Confirmer la déconnexion</h3>
+                    <p class="mb-6">Êtes-vous sûr de vouloir vous déconnecter ?</p>
+                    <div class="flex justify-end space-x-3">
+                        <button id="cancelLogout" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                            Annuler
+                        </button>
+                        <button id="confirmLogout" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                            Se déconnecter
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Gestion des boutons de la modal
+            document.getElementById('cancelLogout').addEventListener('click', () => {
+                document.body.removeChild(modal);
+            });
+            
+            document.getElementById('confirmLogout').addEventListener('click', () => {
+                logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Déconnexion...';
+                logoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                
+                // Redirection après délai
+                setTimeout(() => {
+                    window.location.href = 'index.html'; // Remplacez par votre URL de déconnexion
+                }, 1000);
+            });
+        });
+    }
+});
+    </script>
+</body>
+</html>
