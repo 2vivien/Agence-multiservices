@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     full_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NULL, -- Added email column
     role VARCHAR(50) NOT NULL DEFAULT 'gerant', -- e.g., 'gerant', 'admin'
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -41,21 +42,31 @@ CREATE TABLE IF NOT EXISTS operation_types (
 CREATE TABLE IF NOT EXISTS balances (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    service_id INTEGER NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    service_id INTEGER REFERENCES services(id) ON DELETE CASCADE NULL, -- Made nullable for global balances
     balance_date DATE NOT NULL,
-    initial_balance DECIMAL(15, 2) NOT NULL,
-    final_balance DECIMAL(15, 2), -- Can be null until closing
-    total_cashed_calculated DECIMAL(15, 2) GENERATED ALWAYS AS (final_balance - initial_balance) STORED, -- Example, actual calculation might be more complex
-    total_commission_calculated DECIMAL(15, 2), -- To be calculated based on operations
-    discrepancy DECIMAL(15, 2) GENERATED ALWAYS AS (final_balance - (initial_balance + total_cashed_calculated - total_commission_calculated)) STORED, -- Example
-    is_closed BOOLEAN DEFAULT FALSE,
-    closed_at TIMESTAMP,
+    initial_amount DECIMAL(15, 2) NOT NULL, -- Renamed from initial_balance
+    calculated_final_amount DECIMAL(15, 2) NULL, -- Theoretical final balance, calculated by app
+    actual_final_amount DECIMAL(15, 2) NULL, -- Actual final balance, entered by user (was final_balance)
+    difference_amount DECIMAL(15, 2) NULL, -- Difference, calculated by app
+    total_commission_calculated DECIMAL(15, 2) NULL, -- To be calculated based on operations for this balance period
+    notes TEXT NULL,
+    is_closed BOOLEAN DEFAULT FALSE, -- Kept for now, can be derived from closed_at
+    closed_at TIMESTAMP NULL, -- Timestamp when the balance was closed
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (user_id, service_id, balance_date)
+    -- Unique constraint for per-service daily balances
+    CONSTRAINT unique_user_service_date UNIQUE (user_id, service_id, balance_date),
+    -- Unique constraint for global daily balances (service_id IS NULL)
+    -- Note: Partial unique indexes syntax can vary. This is conceptual for PostgreSQL.
+    -- CREATE UNIQUE INDEX unique_user_date_global ON balances (user_id, balance_date) WHERE service_id IS NULL;
+    -- For simplicity in cross-DB schema, we might rely on application logic to enforce uniqueness for global balances,
+    -- or use a more complex setup if strict DB enforcement for this is needed immediately.
+    -- A simpler UNIQUE constraint that allows NULLs but might not fully enforce the "global" aspect without care:
+    UNIQUE (user_id, balance_date, service_id) -- Standard unique constraint, service_id can be NULL
 );
 
 -- Operations table (Enregistrement des transactions)
+-- No changes needed here as balance_id already exists.
 CREATE TABLE IF NOT EXISTS operations (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, -- Gérant who performed the operation

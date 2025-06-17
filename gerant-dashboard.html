@@ -44,6 +44,8 @@
     </style>
 </head>
 <body class="bg-gray-50">
+    <script src="public/js/common.js"></script> <!-- Include common.js -->
+    <script src="public/js/gerant-dashboard.js" defer></script> <!-- Include gerant-dashboard.js -->
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
         <div class="sidebar bg-indigo-900 text-white w-64 md:w-20 lg:w-64 flex-shrink-0 transition-all duration-300 ease-in-out overflow-y-auto">
@@ -116,11 +118,14 @@
 
             <!-- Dashboard Content -->
             <main class="p-6">
+                <!-- Error Message Display -->
+                <div id="dashboard-error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert"></div>
+
                 <!-- Welcome Section -->
                 <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
                     <div class="flex flex-col md:flex-row md:items-center md:justify-between">
                         <div>
-                            <h2 class="text-2xl font-semibold text-gray-800">Bonjour, Jean Dupont</h2>
+                            <h2 class="text-2xl font-semibold text-gray-800">Bonjour, <span id="welcome-message-user">Utilisateur</span></h2>
                             <p class="text-gray-600 mt-1">Aujourd'hui, <span id="currentDate" class="font-medium">Lundi 12 Juin 2023</span></p>
                         </div>
                         <button id="startDayBtn" class="mt-4 md:mt-0 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium transition duration-300 flex items-center">
@@ -203,37 +208,35 @@
 
                 <!-- Widgets -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                    <!-- Best Sales Hour -->
+                    <!-- Operations Summary Today -->
                     <div class="dashboard-card bg-white rounded-xl shadow-sm p-6 lg:col-span-1">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-semibold text-gray-800">🔥 Meilleure heure de vente</h3>
-                            <i class="fas fa-fire text-orange-500"></i>
+                            <h3 class="text-lg font-semibold text-gray-800">📊 Opérations Aujourd'hui</h3>
+                            <i class="fas fa-tasks text-blue-500"></i>
                         </div>
+                        <div id="summary-loading" class="mt-4 animate-pulse text-gray-500">Chargement du résumé...</div>
                         <div class="mt-4">
-                            <div class="flex items-center justify-center">
-                                <div class="text-4xl font-bold text-indigo-600">15h-16h</div>
-                            </div>
-                            <p class="text-center text-gray-600 mt-2">32% des transactions aujourd'hui</p>
+                            <p class="text-gray-700">Nombre d'opérations: <span id="summary-ops-count" class="font-bold text-2xl text-indigo-600">0</span></p>
+                            <p class="text-gray-700 mt-1">Montant total: <span id="summary-ops-total" class="font-bold text-2xl text-green-600">0 FCFA</span></p>
                         </div>
                     </div>
 
-                    <!-- Total Collected -->
+                    <!-- Current Balance -->
                     <div class="dashboard-card bg-white rounded-xl shadow-sm p-6 lg:col-span-1">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-semibold text-gray-800">📈 Total encaissé</h3>
-                            <i class="fas fa-chart-line text-green-500"></i>
+                            <h3 class="text-lg font-semibold text-gray-800">💰 Solde Actuel Global</h3>
+                            <i class="fas fa-wallet text-purple-500"></i>
                         </div>
+                        <div id="balance-loading" class="mt-4 animate-pulse text-gray-500">Chargement du solde...</div>
                         <div class="mt-4">
-                            <div class="flex items-center justify-center">
-                                <div class="text-4xl font-bold text-green-600">706,550 FCFA</div>
-                            </div>
-                            <p class="text-center text-gray-600 mt-2">+18% par rapport à hier</p>
+                            <p class="text-gray-700">Solde: <span id="current-balance-amount" class="font-bold text-2xl text-purple-600">0 FCFA</span></p>
+                            <p class="text-gray-700 mt-1">Date: <span id="current-balance-date" class="font-semibold">N/A</span></p>
                         </div>
                     </div>
 
                     <!-- Quick Actions -->
                     <div class="dashboard-card bg-white rounded-xl shadow-sm p-6 lg:col-span-1">
-                        <h3 class="text-lg font-semibold text-gray-800">Actions rapides</h3>
+                        <h3 class="text-lg font-semibold text-gray-800">⚡ Actions rapides</h3>
                         <div class="mt-4 grid grid-cols-2 gap-3">
                             <button class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-3 rounded-lg flex items-center justify-center transition duration-300">
                                 <i class="fas fa-exchange-alt mr-2"></i> Transfert
@@ -254,9 +257,10 @@
                 <!-- Recent Transactions -->
                 <div class="dashboard-card bg-white rounded-xl shadow-sm p-6">
                     <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-lg font-semibold text-gray-800">Dernières opérations</h3>
+                        <h3 class="text-lg font-semibold text-gray-800">📜 Dernières opérations</h3>
                         <button class="text-indigo-600 hover:text-indigo-800 font-medium">Voir tout</button>
                     </div>
+                    <div id="operations-loading" class="animate-pulse text-gray-500 mb-4">Chargement des opérations...</div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
@@ -264,39 +268,13 @@
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Heure</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Commission</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-right">Montant</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-right">Commission</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">10:15</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Transfert WU</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Western Union</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">150,000 FCFA</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">5,000 FCFA</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">11:30</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Crédit MTN</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">MTN</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">10,000 FCFA</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">500 FCFA</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">12:45</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Paiement SBEE</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">SBEE</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">45,000 FCFA</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1,000 FCFA</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">14:20</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Transfert RIA</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">RIA</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">75,000 FCFA</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">3,500 FCFA</td>
-                                </tr>
+                            <tbody id="recent-operations-table-body" class="bg-white divide-y divide-gray-200">
+                                <!-- JS will populate this -->
+                                <tr><td colspan="5" class="text-center py-4 text-gray-500">Chargement...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -439,6 +417,8 @@
         });
 
         document.addEventListener('DOMContentLoaded', function() {
+    checkAuthStatusAndRedirect(); // Check authentication status
+
     // Gestion de la sidebar active
     const currentPage = window.location.pathname.split('/').pop();
     document.querySelectorAll('.sidebar-item').forEach(item => {
@@ -481,14 +461,13 @@
                 document.body.removeChild(modal);
             });
             
-            document.getElementById('confirmLogout').addEventListener('click', () => {
-                logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Déconnexion...';
+            document.getElementById('confirmLogout').addEventListener('click', async () => {
+                logoutBtn.querySelector('span').textContent = 'Déconnexion...';
                 logoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                
-                // Redirection après délai
-                setTimeout(() => {
-                    window.location.href = 'index.html'; // Remplacez par votre URL de déconnexion
-                }, 1000);
+                logoutBtn.disabled = true;
+
+                await logoutUser(); // Call the common logout function
+                // logoutUser() will handle redirection.
             });
         });
     }

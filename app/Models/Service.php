@@ -47,4 +47,137 @@ class Service extends Model {
         if (!$this->id) return [];
         return Balance::query("SELECT * FROM balances WHERE service_id = :service_id", ['service_id' => $this->id]);
     }
+
+    /**
+     * Find a service by its name.
+     * @param string $name
+     * @return Service|null
+     */
+    public static function findByName(string $name): ?Service {
+        $stmt = self::db()->prepare("SELECT * FROM " . (new static())->table . " WHERE name = :name");
+        $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+        $stmt->execute();
+        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($data) {
+            // Basic manual hydration
+            $service = new static();
+            $service->id = (int)$data['id'];
+            $service->name = $data['name'];
+            $service->description = $data['description'];
+            $service->is_active = (bool)$data['is_active'];
+            $service->default_commission_rate = isset($data['default_commission_rate']) ? (float)$data['default_commission_rate'] : null;
+            $service->created_at = $data['created_at'];
+            $service->updated_at = $data['updated_at'];
+            return $service;
+        }
+        return null;
+    }
+
+    /**
+     * Create a new service.
+     * @param array $data (name, description, default_commission_rate, is_active)
+     * @return Service|null The created Service object or null on failure.
+     */
+    public static function createService(array $data): ?Service {
+        if (empty($data['name'])) {
+            return null; // Name is mandatory
+        }
+
+        // Optional: Check for name uniqueness before attempting insert
+        // if (self::findByName($data['name'])) { return null; /* Or throw Exception */ }
+
+        $db = self::db();
+        $sql = "INSERT INTO " . (new static())->table . " (name, description, default_commission_rate, is_active, created_at, updated_at)
+                VALUES (:name, :description, :default_commission_rate, :is_active, NOW(), NOW())";
+        $stmt = $db->prepare($sql);
+        $success = $stmt->execute([
+            ':name' => $data['name'],
+            ':description' => $data['description'] ?? null,
+            ':default_commission_rate' => $data['default_commission_rate'] ?? null,
+            ':is_active' => $data['is_active'] ?? true,
+        ]);
+
+        if ($success) {
+            $id = $db->lastInsertId();
+            return parent::find((int)$id); // Use parent::find for consistent hydration
+        }
+        return null;
+    }
+
+    /**
+     * Update an existing service.
+     * @param int $id The ID of the service.
+     * @param array $data Data to update (name, description, default_commission_rate, is_active).
+     * @return bool True on success, false otherwise.
+     */
+    public static function updateService(int $id, array $data): bool {
+        if (empty($data) || !$id) {
+            return false;
+        }
+
+        $fields = [];
+        $params = [':id' => $id];
+        $allowedFields = ['name', 'description', 'default_commission_rate', 'is_active'];
+
+        foreach ($allowedFields as $field) {
+            if (isset($data[$field])) {
+                $fields[] = "{$field} = :{$field}";
+                $params[":{$field}"] = ($field === 'is_active') ? (int)filter_var($data[$field], FILTER_VALIDATE_BOOLEAN) : $data[$field];
+            }
+        }
+
+        if (empty($fields)) {
+            return false; // No valid fields to update
+        }
+        $fields[] = "updated_at = NOW()";
+
+        $sql = "UPDATE " . (new static())->table . " SET " . implode(', ', $fields) . " WHERE id = :id";
+        $stmt = self::db()->prepare($sql);
+        return $stmt->execute($params);
+    }
+
+    /**
+     * Delete a service.
+     * Note: Consider deactivation (is_active = false) instead of hard delete if operations are linked.
+     * @param int $id
+     * @return bool
+     */
+    public static function deleteService(int $id): bool {
+        // Check for linked operations first might be a good idea if not using FK constraints that prevent deletion.
+        $sql = "DELETE FROM " . (new static())->table . " WHERE id = :id";
+        $stmt = self::db()->prepare($sql);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
+    /**
+     * Get services with optional filters and pagination.
+     * @param array $filters ['is_active' => true/false]
+     * @param int $limit
+     * @param int $offset
+     * @return array
+     */
+    public static function getServices(array $filters = [], int $limit = 10, int $offset = 0): array {
+        $params = [':limit' => $limit, ':offset' => $offset];
+        $whereClauses = [];
+
+        if (isset($filters['is_active'])) {
+            $whereClauses[] = "is_active = :is_active";
+            $params[':is_active'] = (int)filter_var($filters['is_active'], FILTER_VALIDATE_BOOLEAN);
+        }
+        // Add more filters if needed
+
+        $sql = "SELECT * FROM " . (new static())->table;
+        if (!empty($whereClauses)) {
+            $sql .= " WHERE " . implode(" AND ", $whereClauses);
+        }
+        $sql .= " ORDER BY name ASC LIMIT :limit OFFSET :offset";
+
+        $stmt = self::db()->prepare($sql);
+        foreach ($params as $paramKey => $value) {
+             $stmt->bindValue($paramKey, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_CLASS, static::class);
+    }
 }

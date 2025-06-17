@@ -56,6 +56,7 @@
     </style>
 </head>
 <body class="bg-gray-50">
+    <script src="public/js/common.js"></script> <!-- Include common.js -->
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
         <div class="sidebar bg-indigo-900 text-white w-64 md:w-20 lg:w-64 flex-shrink-0 transition-all duration-300 ease-in-out overflow-y-auto">
@@ -749,6 +750,8 @@
         });
 
         document.addEventListener('DOMContentLoaded', function() {
+    checkAuthStatusAndRedirect(); // Check authentication status
+
     // Gestion de la sidebar active
     const currentPage = window.location.pathname.split('/').pop();
     document.querySelectorAll('.sidebar-item').forEach(item => {
@@ -791,14 +794,13 @@
                 document.body.removeChild(modal);
             });
             
-            document.getElementById('confirmLogout').addEventListener('click', () => {
-                logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Déconnexion...';
+            document.getElementById('confirmLogout').addEventListener('click', async () => {
+                logoutBtn.querySelector('span').textContent = 'Déconnexion...';
                 logoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                logoutBtn.disabled = true;
                 
-                // Redirection après délai
-                setTimeout(() => {
-                    window.location.href = 'index.html'; // Remplacez par votre URL de déconnexion
-                }, 1000);
+                await logoutUser(); // Call the common logout function
+                // logoutUser() will handle redirection.
             });
         });
     }

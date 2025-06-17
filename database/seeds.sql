@@ -5,10 +5,10 @@
 -- Passwords should be hashed in a real application. For seeds, we'll use placeholders.
 -- It's better to have a default admin user created through a secure process.
 INSERT INTO users (username, password_hash, full_name, role, is_active) VALUES
-('admin', 'hashed_password_admin', 'Admin User', 'admin', TRUE) ON CONFLICT (username) DO NOTHING,
-('gerant01', 'hashed_password_gerant01', 'Gérant Un', 'gerant', TRUE) ON CONFLICT (username) DO NOTHING,
-('gerant02', 'hashed_password_gerant02', 'Gérant Deux', 'gerant', TRUE) ON CONFLICT (username) DO NOTHING,
-('gerant_inactive', 'hashed_password_gerant03', 'Gérant Trois', 'gerant', FALSE) ON CONFLICT (username) DO NOTHING;
+('admin', '$2y$10$g.IOO9hR5UdBs9l2NGXBnu6RjLS2dwFHPCOJi1AZaZ5WGI.WQoNvm', 'Admin User', 'admin', TRUE) ON CONFLICT (username) DO NOTHING,
+('gerant01', '$2y$10$ZmLwSZx23t5vhGkVu2kH7uPURqqd9jv.aftSW5c8pJc3B/SmNvlfG', 'Gérant Un', 'gerant', TRUE) ON CONFLICT (username) DO NOTHING,
+('gerant02', '$2y$10$aI4CrF92ZgwpSdLyQ7M0e.5dwGM/MUzB0GvbeWCELDfdiiITV/WzK', 'Gérant Deux', 'gerant', TRUE) ON CONFLICT (username) DO NOTHING,
+('gerant_inactive', '$2y$10$kys5BHJPez7h4C.6Hj7a6eJZ15faR4oXcX.sijcG/YBvK1JoFvhYm', 'Gérant Trois', 'gerant', FALSE) ON CONFLICT (username) DO NOTHING;
 
 -- Services
 INSERT INTO services (name, description, is_active, default_commission_rate) VALUES

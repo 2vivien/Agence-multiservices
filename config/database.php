@@ -1,5 +1,7 @@
 <?php
 
+// Please update the following database credentials with your actual credentials.
+// Do not commit this file with real credentials to a public repository.
 return [
     'driver' => 'pgsql',
     'host' => 'localhost',
