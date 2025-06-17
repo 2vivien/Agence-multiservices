@@ -140,3 +140,39 @@ CREATE TRIGGER update_reports_updated_at BEFORE UPDATE ON reports FOR EACH ROW E
 
 -- Note: More specific constraints, indexes, and potentially more tables
 -- (e.g., for sessions, roles_permissions) might be needed as development progresses.
+
+-- Suggested Indexes for Performance
+
+-- Users table
+CREATE INDEX IF NOT EXISTS idx_users_role_is_active ON users (role, is_active);
+
+-- Services table
+CREATE INDEX IF NOT EXISTS idx_services_is_active ON services (is_active);
+
+-- Operation Types table
+CREATE INDEX IF NOT EXISTS idx_operation_types_is_active ON operation_types (is_active);
+
+-- Balances table
+CREATE INDEX IF NOT EXISTS idx_balances_user_id ON balances (user_id);
+CREATE INDEX IF NOT EXISTS idx_balances_balance_date ON balances (balance_date);
+CREATE INDEX IF NOT EXISTS idx_balances_is_closed ON balances (is_closed);
+-- The UNIQUE constraint (user_id, balance_date, service_id) already provides an index for these lookups.
+-- If querying for service_id IS NULL frequently for global balances:
+-- CREATE INDEX IF NOT EXISTS idx_balances_user_date_service_null ON balances (user_id, balance_date) WHERE service_id IS NULL; (PostgreSQL specific)
+
+
+-- Operations table
+CREATE INDEX IF NOT EXISTS idx_operations_user_id_operation_time ON operations (user_id, operation_time DESC);
+CREATE INDEX IF NOT EXISTS idx_operations_service_id ON operations (service_id);
+CREATE INDEX IF NOT EXISTS idx_operations_operation_type_id ON operations (operation_type_id);
+CREATE INDEX IF NOT EXISTS idx_operations_balance_id ON operations (balance_id); -- For finding unclosed (NULL) or closed
+CREATE INDEX IF NOT EXISTS idx_operations_operation_time ON operations (operation_time DESC);
+
+-- Alerts table
+CREATE INDEX IF NOT EXISTS idx_alerts_user_id_is_resolved ON alerts (user_id, is_resolved);
+CREATE INDEX IF NOT EXISTS idx_alerts_is_resolved_alert_type ON alerts (is_resolved, alert_type);
+
+-- Audit Log table
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id_action_time ON audit_logs (user_id, action_time DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_target_entity_target_id ON audit_logs (target_entity, target_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_action_time ON audit_logs (action_time DESC);

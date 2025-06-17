@@ -3,42 +3,37 @@
 namespace App\Controllers;
 
 use App\Models\Operation;
-// use App\Models\Service; // For validation
-// use App\Models\OperationType; // For validation
-use App\Models\User; // For validating user_id
+use App\Models\Service;
+use App\Models\OperationType;
+use App\Models\User;
+use Dompdf\Dompdf;
+use Dompdf\Options;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class OperationController extends Controller {
 
     public function __construct() {
         parent::__construct();
-        // Most actions here will require authentication. Specific role checks will be per method.
         $this->requireAuth();
     }
 
-    /**
-     * Display a listing of operations.
-     * Access: Gérant (own operations), Admin (all operations with filters).
-     */
     public function index(): void {
-        // TODO: Implement role-based data fetching
-        // TODO: Implement pagination and filtering
-
         $userRole = $this->getCurrentUserRole();
         $userId = $this->getCurrentUserId();
         $operations = [];
         $page = (int)($this->get('page', 1));
-        $limit = (int)($this->get('limit', 10)); // Default limit to 10, can be overridden by query param
+        $limit = (int)($this->get('limit', 10));
         $offset = ($page - 1) * $limit;
 
-        // Basic filters from query parameters
         $filters = [];
         if ($this->get('service_id')) $filters['service_id'] = (int)$this->get('service_id');
         if ($this->get('operation_type_id')) $filters['operation_type_id'] = (int)$this->get('operation_type_id');
-        if ($this->get('date_from')) $filters['date_from'] = $this->get('date_from'); // Expects YYYY-MM-DD
-        if ($this->get('date_to')) $filters['date_to'] = $this->get('date_to');     // Expects YYYY-MM-DD
+        if ($this->get('date_from')) $filters['date_from'] = $this->get('date_from');
+        if ($this->get('date_to')) $filters['date_to'] = $this->get('date_to');
 
         if ($userRole === 'admin') {
-            if ($this->get('user_id')) $filters['user_id'] = (int)$this->get('user_id'); // Admin can filter by user
+            if ($this->get('user_id')) $filters['user_id'] = (int)$this->get('user_id');
             $operations = Operation::findAllAdmin($filters, $limit, $offset);
         } elseif ($userRole === 'gerant') {
             $operations = Operation::findAllByUser($userId, $filters, $limit, $offset);
@@ -47,57 +42,12 @@ class OperationController extends Controller {
             return;
         }
 
-        // TODO: Add total count for pagination metadata if desired
-        $this->jsonResponse($operations);
+        // This should ideally return an object with 'data' and 'pagination' keys
+        // For now, Operation::findAllAdmin/ByUser return just the data array.
+        // $totalRecords = Operation::countByCriteria($filters); // Assuming this method exists
+        $this->jsonResponse($operations); // Or ['data' => $operations, 'pagination' => [...]]
     }
 
-    /**
-     * Store a newly created operation in storage.
-     * Access: Gérant (for self), Admin (potentially for any user if specified).
-     */
-    public function store(): void {
-use App\Models\Service; // For validation
-use App\Models\OperationType; // For validation
-
-class OperationController extends Controller {
-
-    public function __construct() {
-        parent::__construct();
-        // Most actions here will require authentication. Specific role checks will be per method.
-        $this->requireAuth();
-    }
-
-    /**
-     * Display a listing of operations.
-     * Access: Gérant (own operations), Admin (all operations with filters).
-     */
-    public function index(): void {
-        // TODO: Implement role-based data fetching
-        // TODO: Implement pagination and filtering
-
-        $userRole = $this->getCurrentUserRole();
-        $userId = $this->getCurrentUserId();
-
-        if ($userRole === 'admin') {
-            // Admin: Fetch all operations, potentially with query params for filtering
-            // $filters = $this->get(); // Example: ?user_id=X&service_id=Y
-            // $operations = Operation::findAllAdmin($filters);
-            $this->jsonResponse(['message' => "Admin: Fetch all operations (not implemented yet)", 'filters' => $this->get()]);
-        } elseif ($userRole === 'gerant') {
-            // Gerant: Fetch own operations
-            // $operations = Operation::findAllByUser($userId);
-            $this->jsonResponse(['message' => "Gerant: Fetch own operations (not implemented yet) for user_id: $userId"]);
-        } else {
-            $this->jsonResponse(['error' => 'Unauthorized role.'], 403);
-            return;
-        }
-        // $this->jsonResponse($operations);
-    }
-
-    /**
-     * Store a newly created operation in storage.
-     * Access: Gérant (for self), Admin (potentially for any user if specified).
-     */
     public function store(): void {
         $input = $this->getJsonInput();
         if (!$input) {
@@ -107,7 +57,7 @@ class OperationController extends Controller {
 
         $errors = $this->validateOperationData($input);
         if (!empty($errors)) {
-            $this->jsonResponse(['errors' => $errors], 422); // Unprocessable Entity
+            $this->jsonResponse(['errors' => $errors], 422);
             return;
         }
 
@@ -122,7 +72,6 @@ class OperationController extends Controller {
             }
             $operationUserId = (int)$input['user_id'];
         } elseif ($userRole !== 'gerant' && !($userRole === 'admin' && !isset($input['user_id']))) {
-            // If not gerant, and not admin creating for self (user_id not set in input)
             $this->jsonResponse(['error' => 'Forbidden: Insufficient permissions to create operation for specified user.'], 403);
             return;
         }
@@ -136,37 +85,22 @@ class OperationController extends Controller {
             'operation_time' => $input['operation_time'] ?? date('Y-m-d H:i:s'),
             'description' => $input['description'] ?? null,
             'reference_id' => $input['reference_id'] ?? null,
-            'balance_id' => $input['balance_id'] ?? null, // Optional, might be set later
+            'balance_id' => $input['balance_id'] ?? null,
         ];
 
         $operation = Operation::createOperation($data);
         if ($operation) {
-            $this->jsonResponse($operation, 201); // 201 Created
+            $this->jsonResponse($operation, 201);
         } else {
-            $this->jsonResponse(['error' => 'Failed to create operation.'], 500);
+            if (isset($input['reference_id']) && Operation::query("SELECT id FROM operations WHERE reference_id = :ref_id", ['ref_id' => $input['reference_id']])) {
+                 $this->jsonResponse(['errors' => ['reference_id' => 'Reference ID already exists.']], 409); // Conflict
+                 return;
+            }
+            $this->jsonResponse(['error' => 'Failed to create operation. Check server logs.'], 500);
         }
     }
 
-    /**
-     * Display the specified operation.
-     * Access: Gérant (own operation), Admin (any operation).
-     * @param int $id
-     */
     public function show(int $id): void {
-        // $operation = Operation::findById($id);
-        // if (!$operation) {
-        //     $this->jsonResponse(['error' => 'Operation not found.'], 404);
-        //     return;
-        // }
-
-        // $userRole = $this->getCurrentUserRole();
-        // $userId = $this->getCurrentUserId();
-
-        // if ($userRole !== 'admin' && $operation->user_id !== $userId) {
-        //     $this->jsonResponse(['error' => 'Forbidden. You do not own this resource.'], 403);
-        //     return;
-        // }
-        // $this->jsonResponse($operation);
         $operation = Operation::findById($id);
         if (!$operation) {
             $this->jsonResponse(['error' => 'Operation not found.'], 404);
@@ -183,21 +117,16 @@ class OperationController extends Controller {
         $this->jsonResponse($operation);
     }
 
-    /**
-     * Update the specified operation in storage.
-     * Access: Gérant (own operation, limited fields/conditions), Admin (any operation).
-     * @param int $id
-     */
     public function update(int $id): void {
         $input = $this->getJsonInput();
         if (!$input) {
-            $this->jsonResponse(['error' => 'Invalid JSON input.'], 400);
+            $this->jsonResponse(['error' => 'Invalid JSON input for update.'], 400);
             return;
         }
 
         $operation = Operation::findById($id);
         if (!$operation) {
-            $this->jsonResponse(['error' => 'Operation not found.'], 404);
+            $this->jsonResponse(['error' => 'Operation not found to update.'], 404);
             return;
         }
 
@@ -209,81 +138,48 @@ class OperationController extends Controller {
             return;
         }
 
-        // Validate only the fields that are present in the input
-        $errors = $this->validateOperationData($input, true, $operation->user_id); // isUpdate=true
+        $errors = $this->validateOperationData($input, true, $operation->user_id);
         if (!empty($errors)) {
             $this->jsonResponse(['errors' => $errors], 422);
             return;
         }
 
-        // Prepare data for update, only including fields that are allowed to be updated
         $updateData = [];
-        foreach (['service_id', 'operation_type_id', 'amount', 'commission_applied', 'operation_time', 'description', 'reference_id', 'balance_id'] as $key) {
-            if (isset($input[$key])) {
-                // Apply specific type casting for safety
-                if (in_array($key, ['service_id', 'operation_type_id', 'balance_id']) && $input[$key] !== null) {
-                    $updateData[$key] = (int)$input[$key];
-                } elseif (in_array($key, ['amount', 'commission_applied']) && $input[$key] !== null) {
-                    $updateData[$key] = (float)$input[$key];
+        $allowedUpdateFields = ['service_id', 'operation_type_id', 'amount', 'commission_applied', 'operation_time', 'description', 'reference_id', 'balance_id'];
+        foreach ($allowedUpdateFields as $field) {
+            if (array_key_exists($field, $input)) {
+                 if (in_array($field, ['service_id', 'operation_type_id', 'balance_id']) && $input[$field] !== null) {
+                    $updateData[$field] = (int)$input[$field];
+                } elseif (in_array($field, ['amount', 'commission_applied']) && $input[$field] !== null) {
+                    $updateData[$field] = (float)$input[$field];
                 } else {
-                    $updateData[$key] = $input[$key];
+                    $updateData[$field] = $input[$field];
                 }
             }
         }
-        // user_id cannot be changed by gérant. Admin might, but that logic should be explicit if needed.
-        // if ($userRole === 'admin' && isset($input['user_id']) && $input['user_id'] != $operation->user_id) {
-        //    // Handle change of user_id by admin if allowed by business rules
-        // }
-
 
         if (empty($updateData)) {
-             $this->jsonResponse(['message' => 'No updatable fields provided.', 'data' => Operation::findById($id)], 200);
-             return;
+            $this->jsonResponse(['message' => 'No updatable fields provided.', 'data' => Operation::findById($id)], 200);
+            return;
         }
 
-        $updated = Operation::updateOperation($id, $updateData);
-        if ($updated) {
-            $this->jsonResponse(Operation::findById($id)); // Return updated resource
+        $success = Operation::updateOperation($id, $updateData);
+        if ($success) {
+            $updatedOperation = Operation::findById($id);
+            $this->jsonResponse($updatedOperation);
         } else {
-            $this->jsonResponse(['error' => 'Failed to update operation.'], 500);
+             if (isset($updateData['reference_id']) && $updateData['reference_id'] !== $operation->reference_id && Operation::query("SELECT id FROM operations WHERE reference_id = :ref_id", ['ref_id' => $updateData['reference_id']])) {
+                 $this->jsonResponse(['errors' => ['reference_id' => 'Reference ID already exists.']], 409); // Conflict
+                 return;
+            }
+            $this->jsonResponse(['error' => 'Failed to update operation. Check server logs.'], 500);
         }
     }
 
-    /**
-     * Remove the specified operation from storage.
-     * Access: Gérant (own operation, specific conditions), Admin (any operation).
-     * @param int $id
-     */
     public function destroy(int $id): void {
-        // TODO: Fetch operation by ID (Operation::findById($id))
-        // TODO: Check ownership if user is 'gerant'
-        // TODO: Check if operation can be deleted (e.g., not too old, not part of a closed balance)
-        // TODO: Call Operation::deleteOperation($id)
-
-        // $operation = Operation::findById($id);
-        // if (!$operation) {
-        //     $this->jsonResponse(['error' => 'Operation not found.'], 404);
-        //     return;
-        // }
-
-        // $userRole = $this->getCurrentUserRole();
-        // $userId = $this->getCurrentUserId();
-
-        // if ($userRole !== 'admin' && $operation->user_id !== $userId) {
-        //     $this->jsonResponse(['error' => 'Forbidden. You do not own this resource or cannot delete it.'], 403);
-        //     return;
-        // }
-        // Additional business logic for deletion constraints (e.g., cannot delete if balance closed)
-
-        // $deleted = Operation::deleteOperation($id);
-        // if ($deleted) {
-        //     $this->jsonResponse(null, 204); // 204 No Content
-        // } else {
-        //     $this->jsonResponse(['error' => 'Failed to delete operation.'], 500);
-        // }
         $operation = Operation::findById($id);
         if (!$operation) {
-            $this->jsonResponse(['error' => 'Operation not found.'], 404);
+            $this->jsonResponse(['error' => 'Operation not found to delete.'], 404);
             return;
         }
 
@@ -295,28 +191,26 @@ class OperationController extends Controller {
             return;
         }
 
-        // TODO: Add any additional business logic for deletion constraints
-        // (e.g., cannot delete if balance is closed and this operation is part of it).
+        // Business logic: e.g., cannot delete if part of a closed balance
+        if ($operation->balance_id !== null) {
+            $balance = Balance::find($operation->balance_id);
+            if ($balance && $balance->is_closed) {
+                 $this->jsonResponse(['error' => 'Cannot delete operation linked to a closed balance.'], 403);
+                 return;
+            }
+        }
 
         $deleted = Operation::deleteOperation($id);
         if ($deleted) {
-            $this->jsonResponse(null, 204); // 204 No Content
+            $this->jsonResponse(null, 204);
         } else {
             $this->jsonResponse(['error' => 'Failed to delete operation.'], 500);
         }
     }
 
-    /**
-     * Validates operation data for store and update actions.
-     * @param array $data The input data.
-     * @param bool $isUpdate Whether this is an update operation ( relaxes some 'required' rules).
-     * @param ?int $existingUserId The user_id of the operation being updated (for ownership checks if user_id is in $data).
-     * @return array Array of errors, empty if valid.
-     */
     private function validateOperationData(array $data, bool $isUpdate = false, ?int $existingUserId = null): array {
         $errors = [];
 
-        // service_id: required, must exist
         if (!empty($data['service_id'])) {
             if (!is_numeric($data['service_id']) || !Service::find((int)$data['service_id'])) {
                 $errors['service_id'] = 'Invalid or non-existent Service ID.';
@@ -325,7 +219,6 @@ class OperationController extends Controller {
             $errors['service_id'] = 'Service ID is required.';
         }
 
-        // operation_type_id: required, must exist
         if (!empty($data['operation_type_id'])) {
             if (!is_numeric($data['operation_type_id']) || !OperationType::find((int)$data['operation_type_id'])) {
                 $errors['operation_type_id'] = 'Invalid or non-existent Operation Type ID.';
@@ -334,8 +227,7 @@ class OperationController extends Controller {
             $errors['operation_type_id'] = 'Operation Type ID is required.';
         }
 
-        // amount: required, numeric, positive
-        if (isset($data['amount'])) { // Allow 0 amount if it's a valid scenario
+        if (isset($data['amount'])) {
             if (!is_numeric($data['amount']) || (float)$data['amount'] < 0) {
                 $errors['amount'] = 'Amount must be a non-negative number.';
             }
@@ -343,25 +235,22 @@ class OperationController extends Controller {
             $errors['amount'] = 'Amount is required.';
         }
 
-        // commission_applied: optional, numeric, non-negative
         if (isset($data['commission_applied']) && $data['commission_applied'] !== null) {
             if (!is_numeric($data['commission_applied']) || (float)$data['commission_applied'] < 0) {
                 $errors['commission_applied'] = 'Commission must be a non-negative number.';
             }
         }
 
-        // operation_time: optional (defaults to now), but if provided, must be valid datetime
         if (!empty($data['operation_time'])) {
             $d = \DateTime::createFromFormat('Y-m-d H:i:s', $data['operation_time']);
             if (!$d || $d->format('Y-m-d H:i:s') !== $data['operation_time']) {
-                $d = \DateTime::createFromFormat('Y-m-d', $data['operation_time']);
+                $d = \DateTime::createFromFormat('Y-m-d', $data['operation_time']); // Allow date only
                  if (!$d || $d->format('Y-m-d') !== $data['operation_time']) {
                     $errors['operation_time'] = 'Operation time must be a valid datetime (YYYY-MM-DD HH:MM:SS or YYYY-MM-DD).';
                  }
             }
         }
 
-        // user_id (relevant if admin is setting it, or for ownership checks on update)
         if (isset($data['user_id'])) {
             if (!is_numeric($data['user_id'])) {
                 $errors['user_id'] = 'User ID must be numeric.';
@@ -372,52 +261,163 @@ class OperationController extends Controller {
             } elseif ($this->getCurrentUserRole() === 'gerant' && (int)$data['user_id'] !== $this->getCurrentUserId()) {
                  $errors['user_id'] = 'Gérant cannot assign operation to another user.';
             }
-            // If isUpdate and user_id is being changed by admin
             if ($isUpdate && $existingUserId && $this->getCurrentUserRole() === 'admin' && $data['user_id'] != $existingUserId) {
-                // Potentially log this or add specific business rule checks
+                // Potentially log this or add specific business rule checks if changing user_id is allowed for admin
             }
         }
 
-        // balance_id: optional, numeric if present
         if (isset($data['balance_id']) && $data['balance_id'] !== null) {
             if (!is_numeric($data['balance_id'])) {
                  $errors['balance_id'] = 'Balance ID must be numeric if provided.';
             }
-            // Could also check if Balance::find((int)$data['balance_id']) exists
         }
 
-        // description, reference_id: usually string, max length checks could be added
         if (isset($data['description']) && !is_string($data['description'])) {
             $errors['description'] = 'Description must be a string.';
         }
-        if (isset($data['reference_id']) && !is_string($data['reference_id'])) {
-            $errors['reference_id'] = 'Reference ID must be a string.';
+        if (isset($data['reference_id']) && $data['reference_id'] !== null) {
+             if(!is_string($data['reference_id']) && !is_numeric($data['reference_id'])){
+                 $errors['reference_id'] = 'Reference ID must be a string or number.';
+             }
+             // Check uniqueness for reference_id, if it's meant to be unique
+             // $op = Operation::query("SELECT id FROM operations WHERE reference_id = :ref_id", ['ref_id' => $data['reference_id']]);
+             // if ($op && (!$isUpdate || $op[0]->id != $currentOperationIdBeingUpdated)) { $errors['reference_id'] = 'Reference ID already exists.';}
         }
-
         return $errors;
     }
 
     /**
      * Export operations list to PDF.
-     * Placeholder for future implementation.
      */
     public function exportPDF(): void {
-        // TODO: Implement PDF export logic
-        // 1. Fetch operations (similar to index(), possibly with filters from GET params)
-        // 2. Use a PDF library (e.g., TCPDF, DomPDF) to generate the PDF
-        // 3. Set appropriate headers and output the PDF
-        $this->jsonResponse(['message' => 'PDF export endpoint for operations (not implemented yet)']);
+        // Add DomPDF use statements at the top of the file if not already there
+        // use Dompdf\Dompdf;
+        // use Dompdf\Options;
+
+        $userRole = $this->getCurrentUserRole();
+        $userId = $this->getCurrentUserId();
+        $operations = [];
+
+        $filters = []; // Collect filters from GET params
+        if ($this->get('service_id')) $filters['service_id'] = (int)$this->get('service_id');
+        if ($this->get('operation_type_id')) $filters['operation_type_id'] = (int)$this->get('operation_type_id');
+        if ($this->get('date_from')) $filters['date_from'] = $this->get('date_from');
+        if ($this->get('date_to')) $filters['date_to'] = $this->get('date_to');
+
+        if ($userRole === 'admin') {
+            if ($this->get('user_id')) $filters['user_id'] = (int)$this->get('user_id');
+            $operations = Operation::findAllAdmin($filters, 10000, 0); // Fetch all relevant for export
+        } elseif ($userRole === 'gerant') {
+            $operations = Operation::findAllByUser($userId, $filters, 10000, 0);
+        } else {
+            http_response_code(403); echo "Forbidden"; exit;
+        }
+
+        if (empty($operations)) {
+            http_response_code(404); echo "No operations found for the selected criteria."; exit;
+        }
+
+        $html = "<!DOCTYPE html><html><head><meta charset='UTF-8'>";
+        $html .= "<style>body { font-family: DejaVu Sans, sans-serif; font-size: 10px; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 5px; text-align: left; } th { background-color: #eee; }</style>";
+        $html .= "</head><body><h1>Liste des Opérations</h1>";
+        // Display filters
+        // ... (similar logic as before to display applied filters) ...
+
+        $html .= "<table><thead><tr><th>Date</th><th>Description</th><th>Gérant</th><th>Service</th><th>Type</th><th>Montant</th><th>Commission</th></tr></thead><tbody>";
+        foreach ($operations as $op) {
+            $html .= "<tr>";
+            $html .= "<td>" . htmlspecialchars($op->operation_time ?? '') . "</td>";
+            $html .= "<td>" . htmlspecialchars($op->description ?? '') . "</td>";
+            $html .= "<td>" . htmlspecialchars($op->user_username ?? User::find($op->user_id)->username ?? 'N/A') . "</td>";
+            $html .= "<td>" . htmlspecialchars($op->service_name ?? Service::find($op->service_id)->name ?? 'N/A') . "</td>";
+            $html .= "<td>" . htmlspecialchars($op->operation_type_name ?? OperationType::find($op->operation_type_id)->name ?? 'N/A') . "</td>";
+            $html .= "<td style='text-align:right;'>" . number_format($op->amount ?? 0, 2, ',', ' ') . "</td>";
+            $html .= "<td style='text-align:right;'>" . number_format($op->commission_applied ?? 0, 2, ',', ' ') . "</td>";
+            $html .= "</tr>";
+        }
+        $html .= "</tbody></table></body></html>";
+
+        $options = new Options();
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('defaultFont', 'DejaVu Sans');
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        $fileName = "operations_export_" . date('Y-m-d') . ".pdf";
+        if (ob_get_level()) ob_end_clean();
+        $dompdf->stream($fileName, ["Attachment" => true]);
+        exit;
     }
 
     /**
      * Export operations list to Excel.
-     * Placeholder for future implementation.
      */
     public function exportExcel(): void {
-        // TODO: Implement Excel export logic
-        // 1. Fetch operations
-        // 2. Use a library (e.g., PhpSpreadsheet) to generate Excel file
-        // 3. Set appropriate headers and output the file
-        $this->jsonResponse(['message' => 'Excel export endpoint for operations (not implemented yet)']);
+        // Add PhpSpreadsheet use statements at the top
+        // use PhpOffice\PhpSpreadsheet\Spreadsheet;
+        // use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+
+        $userRole = $this->getCurrentUserRole();
+        $userId = $this->getCurrentUserId();
+        $operations = [];
+
+        $filters = [];
+        if ($this->get('service_id')) $filters['service_id'] = (int)$this->get('service_id');
+        if ($this->get('operation_type_id')) $filters['operation_type_id'] = (int)$this->get('operation_type_id');
+        if ($this->get('date_from')) $filters['date_from'] = $this->get('date_from');
+        if ($this->get('date_to')) $filters['date_to'] = $this->get('date_to');
+
+        if ($userRole === 'admin') {
+            if ($this->get('user_id')) $filters['user_id'] = (int)$this->get('user_id');
+            $operations = Operation::findAllAdmin($filters, 10000, 0);
+        } elseif ($userRole === 'gerant') {
+            $operations = Operation::findAllByUser($userId, $filters, 10000, 0);
+        } else {
+            http_response_code(403); echo "Forbidden"; exit;
+        }
+
+        if (empty($operations)) {
+            http_response_code(404); echo "No operations found for the selected criteria to export."; exit;
+        }
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet(); // Use FQCN if 'use' not at top
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Opérations');
+
+        $headers = ['ID Opération', 'Date & Heure', 'Description', 'Gérant', 'Service', 'Type d\'Opération', 'Montant', 'Commission Appliquée', 'Référence ID', 'ID Clôture'];
+        $sheet->fromArray($headers, NULL, 'A1');
+        foreach (range('A', $sheet->getHighestColumn()) as $columnID) {
+            $sheet->getColumnDimension($columnID)->setAutoSize(true);
+            $sheet->getStyle($columnID . '1')->getFont()->setBold(true);
+        }
+
+        $rowNumber = 2;
+        foreach ($operations as $op) {
+            $sheet->setCellValue('A' . $rowNumber, $op->id);
+            $sheet->setCellValue('B' . $rowNumber, $op->operation_time);
+            $sheet->setCellValue('C' . $rowNumber, $op->description);
+            $sheet->setCellValue('D' . $rowNumber, $op->user_username ?? User::find($op->user_id)->username ?? '');
+            $sheet->setCellValue('E' . $rowNumber, $op->service_name ?? Service::find($op->service_id)->name ?? '');
+            $sheet->setCellValue('F' . $rowNumber, $op->operation_type_name ?? OperationType::find($op->operation_type_id)->name ?? '');
+            $sheet->setCellValue('G' . $rowNumber, $op->amount);
+            $sheet->getStyle('G' . $rowNumber)->getNumberFormat()->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1);
+            $sheet->setCellValue('H' . $rowNumber, $op->commission_applied);
+            $sheet->getStyle('H' . $rowNumber)->getNumberFormat()->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1);
+            $sheet->setCellValue('I' . $rowNumber, $op->reference_id);
+            $sheet->setCellValue('J' . $rowNumber, $op->balance_id);
+            $rowNumber++;
+        }
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet); // Use FQCN
+        $fileName = "export_operations_" . date('Y-m-d_H-i-s') . ".xlsx";
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . urlencode($fileName) . '"');
+        header('Cache-Control: max-age=0');
+        if (ob_get_level()) ob_end_clean();
+        $writer->save('php://output');
+        exit;
     }
 }

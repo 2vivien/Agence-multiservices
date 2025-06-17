@@ -209,3 +209,29 @@ async function handleApiError(response, targetErrorElementId = null) {
     }
     return false; // No error handled by this function
 }
+
+/**
+ * Formats a number as currency (FCFA example).
+ * @param {number} amount The amount to format.
+ * @returns {string} The formatted currency string or 'N/A'.
+ */
+function formatCurrency(amount) {
+    if (amount === null || amount === undefined || isNaN(parseFloat(amount))) {
+        return 'N/A';
+    }
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(amount);
+}
+
+/**
+ * Validates an email address.
+ * @param {string} email The email to validate.
+ * @returns {boolean} True if valid, false otherwise.
+ */
+function isValidEmail(email) {
+    if (!email || typeof email !== 'string') {
+        return false;
+    }
+    // Basic regex for email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}

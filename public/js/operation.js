@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let operationTypesList = [];
     let operationsList = [];
     let currentEditingOperationId = null;
+    let currentFilters = {}; // To store any active filters if they are added later
 
     // DOM Elements
     const operationsTableBody = document.getElementById('operations-table-body');
@@ -24,12 +25,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const operationIdInput = document.getElementById('form-operation-id');
     const formTitle = document.getElementById('form-title');
     const submitButton = operationForm ? operationForm.querySelector('button[type="submit"]') : null;
-    const submitButtonText = document.getElementById('form-submit-button-text'); // Span for text
+    const submitButtonText = document.getElementById('form-submit-button-text');
     const resetButton = document.getElementById('reset-form-button');
 
     const tableLoadingIndicator = document.getElementById('table-loading');
     const formLoadingIndicator = document.getElementById('form-loading');
     const operationsTable = document.getElementById('operations-table');
+
+    // Export buttons
+    const exportPdfBtn = document.getElementById('export-ops-pdf-btn');
+    const exportExcelBtn = document.getElementById('export-ops-excel-btn');
 
     async function loadPrerequisites() {
         try {
@@ -64,17 +69,37 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Function to get current filters (if any were added to the page)
+    // For now, it's empty, but can be expanded if filter inputs are added to operation.html
+    function getCurrentOperationFilters() {
+        const filters = {};
+        // Example: if a date filter was added with id 'filter-op-date'
+        // const dateFilter = document.getElementById('filter-op-date');
+        // if (dateFilter && dateFilter.value) {
+        //     filters.date = dateFilter.value;
+        // }
+        // currentFilters = filters; // Update global currentFilters if needed elsewhere
+        return filters;
+    }
+
+
     async function fetchOperations() {
         if (tableLoadingIndicator) tableLoadingIndicator.classList.remove('hidden');
         if (operationsTable) operationsTable.classList.add('hidden');
 
+        currentFilters = getCurrentOperationFilters(); // Update filters before fetching
+        const queryParams = new URLSearchParams(currentFilters).toString();
+
+
         try {
-            const response = await fetch('/api/operations', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const response = await fetch(`/api/operations?${queryParams}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
             if (!response.ok) {
                 await handleApiError(response);
                 operationsList = [];
             } else {
                 const result = await response.json();
+                // The API /api/operations might return an array directly or an object with a 'data' property for pagination.
+                // The current backend OperationController@index returns array directly without pagination structure.
                 operationsList = result.data || result;
             }
             renderOperationsTable(operationsList);
@@ -106,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${op.operation_type_name || operationTypesList.find(ot => ot.id == op.operation_type_id)?.name || op.operation_type_id}</td>
                 <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700 text-right">${formatCurrency(op.amount)}</td>
                 <td class="px-6 py-3 whitespace-nowrap text-sm text-right">
-                    <button data-id="${op.id}" class="edit-btn text-indigo-600 hover:text-indigo-900 mr-2" title="Modifier"><i class="fas fa-edit"></i> Modifier</button>
+                    <button data-id="${op.id}" class="edit-btn text-indigo-600 hover:text-indigo-800 mr-2" title="Modifier"><i class="fas fa-edit"></i> Modifier</button>
                     <button data-id="${op.id}" class="delete-btn text-red-600 hover:text-red-900" title="Supprimer"><i class="fas fa-trash"></i> Supprimer</button>
                 </td>
             `;
@@ -160,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showGlobalNotification(currentEditingOperationId ? 'Opération mise à jour avec succès!' : 'Opération ajoutée avec succès!', 'success');
                 fetchOperations();
                 resetForm();
-                document.dispatchEvent(new CustomEvent('operationsUpdated')); // Dispatch event
+                document.dispatchEvent(new CustomEvent('operationsUpdated'));
             } else if (response.status === 422 && responseData.errors) {
                 const errors = Object.entries(responseData.errors).map(([field, msg]) => `${field}: ${msg}`).join('; ');
                 showGlobalNotification(`Erreurs de validation: ${errors}`, 'error');
@@ -225,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok || response.status === 204) {
                 showGlobalNotification('Opération supprimée avec succès!', 'success');
                 fetchOperations();
-                document.dispatchEvent(new CustomEvent('operationsUpdated')); // Dispatch event
+                document.dispatchEvent(new CustomEvent('operationsUpdated'));
             } else {
                 await handleApiError(response);
             }
@@ -245,6 +270,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (operationTypeSelect) operationTypeSelect.value = "";
     }
 
+    // Export handlers
+    function handleExport(exportType) {
+        showGlobalNotification('Préparation de l\'export...', 'info');
+        const filters = getCurrentOperationFilters(); // Use current filters for export
+        const queryParams = new URLSearchParams(filters).toString();
+        const exportUrl = `/api/operations/export/${exportType}?${queryParams}`;
+        window.open(exportUrl, '_blank');
+    }
+
+    if (exportPdfBtn) {
+        exportPdfBtn.addEventListener('click', () => handleExport('pdf'));
+    }
+    if (exportExcelBtn) {
+        exportExcelBtn.addEventListener('click', () => handleExport('excel'));
+    }
+
+    // Initial setup
     if (operationForm) operationForm.addEventListener('submit', handleFormSubmit);
     if (resetButton) resetButton.addEventListener('click', resetForm);
 

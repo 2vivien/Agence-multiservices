@@ -99,7 +99,17 @@
 
         <!-- Service-based Stats Section -->
         <section id="service-stats-section" class="mb-8 stat-card">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Statistiques par Service</h2>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-semibold text-gray-700">Statistiques par Service</h2>
+                <div class="flex space-x-2">
+                    <button id="export-stats-service-pdf-btn" class="bg-red-500 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-md text-sm">
+                        <i class="fas fa-file-pdf mr-1"></i> PDF
+                    </button>
+                    <button id="export-stats-service-excel-btn" class="bg-green-500 hover:bg-green-700 text-white font-semibold py-2 px-3 rounded-md text-sm">
+                        <i class="fas fa-file-excel mr-1"></i> Excel
+                    </button>
+                </div>
+            </div>
             <div id="service-stats-loading" class="loading-placeholder hidden"><i class="fas fa-spinner fa-spin mr-2"></i>Chargement...</div>
             <div class="chart-container">
                 <canvas id="service-stats-chart"></canvas>
@@ -108,7 +118,17 @@
 
         <!-- Financial Summary Section -->
         <section id="financial-summary-section" class="mb-8 stat-card">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Résumé Financier</h2>
+             <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-semibold text-gray-700">Résumé Financier</h2>
+                <div class="flex space-x-2">
+                    <button id="export-stats-financial-pdf-btn" class="bg-red-500 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-md text-sm">
+                        <i class="fas fa-file-pdf mr-1"></i> PDF
+                    </button>
+                    <button id="export-stats-financial-excel-btn" class="bg-green-500 hover:bg-green-700 text-white font-semibold py-2 px-3 rounded-md text-sm">
+                        <i class="fas fa-file-excel mr-1"></i> Excel
+                    </button>
+                </div>
+            </div>
             <div id="financial-summary-loading" class="loading-placeholder hidden"><i class="fas fa-spinner fa-spin mr-2"></i>Chargement...</div>
             <div class="chart-container" style="max-width: 400px;"> <!-- Doughnut charts often look better smaller -->
                 <canvas id="financial-summary-chart"></canvas>
@@ -117,7 +137,17 @@
 
         <!-- User Activity Stats Section (Admin Only) -->
         <section id="user-activity-section" class="admin-only-item mb-8 stat-card">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Activité des Gérants</h2>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-semibold text-gray-700">Activité des Gérants</h2>
+                <div class="flex space-x-2">
+                    <button id="export-stats-user-activity-pdf-btn" class="bg-red-500 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-md text-sm">
+                        <i class="fas fa-file-pdf mr-1"></i> PDF
+                    </button>
+                    <button id="export-stats-user-activity-excel-btn" class="bg-green-500 hover:bg-green-700 text-white font-semibold py-2 px-3 rounded-md text-sm">
+                        <i class="fas fa-file-excel mr-1"></i> Excel
+                    </button>
+                </div>
+            </div>
             <div id="user-activity-loading" class="loading-placeholder hidden"><i class="fas fa-spinner fa-spin mr-2"></i>Chargement...</div>
             <div class="chart-container">
                 <canvas id="user-activity-chart"></canvas>
