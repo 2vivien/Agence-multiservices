@@ -128,11 +128,17 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(`/api/stats/overall?${queryParams}`);
             if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-            const result = await response.json();
-            renderOverallStats(result.data);
+            if (!response.ok) {
+                await handleApiError(response); // Uses global notification for errors
+                renderOverallStats(null); // Clear or show error state in stats display
+            } else {
+                const result = await response.json();
+                renderOverallStats(result.data);
+            }
         } catch (error) {
             console.error('Error fetching overall stats:', error);
-            if (totalOperationsEl) totalOperationsEl.textContent = 'Erreur';
+            showGlobalNotification('Erreur réseau: statistiques générales.', 'error');
+            renderOverallStats(null);
         } finally {
             if (overallLoading) overallLoading.style.display = 'none';
         }
@@ -152,12 +158,17 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(`/api/stats/services?${queryParams}`);
             if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-            const result = await response.json();
-            // Assuming result.data is an array like: [{service_name, operation_count, total_amount}]
-            renderServiceChart(result.data);
+            if (!response.ok) {
+                await handleApiError(response);
+                if(serviceStatsChartCanvas) serviceStatsChartCanvas.parentElement.innerHTML = '<p class="text-red-500 text-center py-4">Erreur de chargement des données.</p>';
+            } else {
+                const result = await response.json();
+                renderServiceChart(result.data);
+            }
         } catch (error) {
             console.error('Error fetching service stats:', error);
-             if(serviceStatsChartCanvas) serviceStatsChartCanvas.parentElement.innerHTML = '<p class="text-red-500">Erreur de chargement.</p>';
+            showGlobalNotification('Erreur réseau: statistiques par service.', 'error');
+            if(serviceStatsChartCanvas) serviceStatsChartCanvas.parentElement.innerHTML = '<p class="text-red-500 text-center py-4">Erreur de chargement des données.</p>';
         } finally {
             if (serviceLoading) serviceLoading.style.display = 'none';
         }
@@ -225,12 +236,17 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(`/api/stats/financial-summary?${queryParams}`);
             if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-            const result = await response.json();
-            // Assuming result.data is {total_deposits, total_withdrawals, total_commissions_earned}
-            renderFinancialSummaryChart(result.data);
+            if (!response.ok) {
+                await handleApiError(response);
+                if(financialSummaryChartCanvas) financialSummaryChartCanvas.parentElement.innerHTML = '<p class="text-red-500 text-center py-4">Erreur de chargement des données.</p>';
+            } else {
+                const result = await response.json();
+                renderFinancialSummaryChart(result.data);
+            }
         } catch (error) {
             console.error('Error fetching financial summary:', error);
-            if(financialSummaryChartCanvas) financialSummaryChartCanvas.parentElement.innerHTML = '<p class="text-red-500">Erreur de chargement.</p>';
+            showGlobalNotification('Erreur réseau: résumé financier.', 'error');
+            if(financialSummaryChartCanvas) financialSummaryChartCanvas.parentElement.innerHTML = '<p class="text-red-500 text-center py-4">Erreur de chargement des données.</p>';
         } finally {
             if (financialLoading) financialLoading.style.display = 'none';
         }
@@ -275,12 +291,17 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(`/api/stats/user-activity?${queryParams}`);
              if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-            const result = await response.json();
-            // Assuming result.data is an array like: [{user_full_name, total_ops, last_activity_date}]
-            renderUserActivityChart(result.data);
+            if (!response.ok) {
+                await handleApiError(response);
+                if(userActivityChartCanvas) userActivityChartCanvas.parentElement.innerHTML = '<p class="text-red-500 text-center py-4">Erreur de chargement des données.</p>';
+            } else {
+                const result = await response.json();
+                renderUserActivityChart(result.data);
+            }
         } catch (error) {
             console.error('Error fetching user activity stats:', error);
-            if(userActivityChartCanvas) userActivityChartCanvas.parentElement.innerHTML = '<p class="text-red-500">Erreur de chargement.</p>';
+            showGlobalNotification('Erreur réseau: activité des gérants.', 'error');
+            if(userActivityChartCanvas) userActivityChartCanvas.parentElement.innerHTML = '<p class="text-red-500 text-center py-4">Erreur de chargement des données.</p>';
         } finally {
             if (userActivityLoading) userActivityLoading.style.display = 'none';
         }

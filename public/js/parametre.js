@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Check authentication and role
-    if (typeof checkAuthStatusAndRedirect !== 'function' || typeof logoutUser !== 'function') {
+    if (typeof checkAuthStatusAndRedirect !== 'function' || typeof logoutUser !== 'function' || typeof showGlobalNotification !== 'function' || typeof handleApiError !== 'function') {
         console.error('common.js is not loaded or essential functions are missing.');
         alert('Erreur critique: Fichiers de base manquants. Veuillez contacter le support.');
         return;
@@ -9,8 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const userRole = localStorage.getItem('userRole');
     if (userRole !== 'admin') {
-        alert('Accès interdit. Cette page est réservée aux administrateurs.');
-        window.location.href = 'index.html'; // Or a relevant redirect for non-admins
+        showGlobalNotification('Accès interdit. Cette page est réservée aux administrateurs.', 'error');
+        setTimeout(() => window.location.href = 'index.html', 2000);
         return;
     }
 
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const usersTableBody = document.getElementById('users-table-body');
     const userForm = document.getElementById('user-form');
     const userFormTitle = document.getElementById('user-form-title');
-    const userIdInput = document.getElementById('form-user-id');
+    const userIdInput = document.getElementById('form-user-id'); // Hidden input
     const usernameInput = document.getElementById('form-username');
     const userFullNameInput = document.getElementById('form-user-fullname');
     const userEmailInput = document.getElementById('form-user-email');
@@ -32,46 +32,59 @@ document.addEventListener('DOMContentLoaded', () => {
     const userConfirmPasswordInput = document.getElementById('form-user-confirm-password');
     const userRoleSelect = document.getElementById('form-user-role');
     const userIsActiveCheckbox = document.getElementById('form-user-isactive');
-    const userSubmitButton = userForm ? userForm.querySelector('button[type="submit"]') : null;
+    const userSubmitButton = userForm ? userForm.querySelector('button[type="submit"]') : null; // Actual button
+    const userSubmitButtonText = document.getElementById('user-form-submit-text'); // Span for text
     const userCancelButton = document.getElementById('user-form-cancel');
     const addUserButton = document.getElementById('add-user-button');
-    const userFormSection = document.getElementById('user-form-section'); // To show/hide form
+    const userFormSection = document.getElementById('user-form-section');
+    const usersTableLoading = document.getElementById('users-table-loading');
+    const usersTableContainer = document.getElementById('users-table-container');
 
     // DOM Elements - Services
     const servicesTableBody = document.getElementById('services-table-body');
     const serviceForm = document.getElementById('service-form');
     const serviceFormTitle = document.getElementById('service-form-title');
-    const serviceIdInput = document.getElementById('form-service-id-hidden'); // Hidden field for ID
+    const serviceIdInput = document.getElementById('form-service-id-hidden'); // Hidden input
     const serviceNameInput = document.getElementById('form-service-name');
     const serviceDescriptionInput = document.getElementById('form-service-description');
     const serviceCommissionInput = document.getElementById('form-service-commission');
     const serviceIsActiveCheckbox = document.getElementById('form-service-isactive');
-    const serviceSubmitButton = serviceForm ? serviceForm.querySelector('button[type="submit"]') : null;
+    const serviceSubmitButton = serviceForm ? serviceForm.querySelector('button[type="submit"]') : null; // Actual button
+    const serviceSubmitButtonText = document.getElementById('service-form-submit-text'); // Span for text
     const serviceCancelButton = document.getElementById('service-form-cancel');
     const addServiceButton = document.getElementById('add-service-button');
-    const serviceFormSection = document.getElementById('service-form-section'); // To show/hide form
+    const serviceFormSection = document.getElementById('service-form-section');
+    const servicesTableLoading = document.getElementById('services-table-loading');
+    const servicesTableContainer = document.getElementById('services-table-container');
 
-    // Notifications
-    const globalNotification = document.getElementById('global-notification');
-
-    // Tab handling (if any, simple for now: show/hide form sections)
-    if(addUserButton && userFormSection) addUserButton.addEventListener('click', () => { userFormSection.classList.remove('hidden'); resetUserForm(); });
+    // Tab handling
+    if(addUserButton && userFormSection) addUserButton.addEventListener('click', () => { userFormSection.classList.remove('hidden'); if(serviceFormSection) serviceFormSection.classList.add('hidden'); resetUserForm(); });
     if(userCancelButton && userFormSection) userCancelButton.addEventListener('click', () => { userFormSection.classList.add('hidden'); });
 
-    if(addServiceButton && serviceFormSection) addServiceButton.addEventListener('click', () => { serviceFormSection.classList.remove('hidden'); resetServiceForm(); });
+    if(addServiceButton && serviceFormSection) addServiceButton.addEventListener('click', () => { serviceFormSection.classList.remove('hidden'); if(userFormSection) userFormSection.classList.add('hidden'); resetServiceForm(); });
     if(serviceCancelButton && serviceFormSection) serviceCancelButton.addEventListener('click', () => { serviceFormSection.classList.add('hidden'); });
-
 
     // --- User Management ---
     async function fetchUsers() {
+        if(usersTableLoading) usersTableLoading.classList.remove('hidden');
+        if(usersTableContainer) usersTableContainer.classList.add('hidden');
         try {
             const response = await fetch('/api/admin/users', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-            if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-            usersList = await response.json(); // Assuming API directly returns array or needs .data
-             renderUsersTable(usersList.data || usersList);
+            if (!response.ok) {
+                await handleApiError(response);
+                usersList = [];
+            } else {
+                const result = await response.json();
+                usersList = result.data || result; // Adapt if API wraps in 'data'
+            }
+            renderUsersTable(usersList);
         } catch (error) {
             console.error('Error fetching users:', error);
-            showNotification('Erreur de chargement des utilisateurs.', 'error');
+            showGlobalNotification('Erreur réseau lors du chargement des utilisateurs.', 'error');
+            renderUsersTable([]);
+        } finally {
+            if(usersTableLoading) usersTableLoading.classList.add('hidden');
+            if(usersTableContainer) usersTableContainer.classList.remove('hidden');
         }
     }
 
@@ -85,14 +98,14 @@ document.addEventListener('DOMContentLoaded', () => {
         users.forEach(user => {
             const row = usersTableBody.insertRow();
             row.innerHTML = `
-                <td class="px-4 py-2 border-b">${user.username}</td>
-                <td class="px-4 py-2 border-b">${user.full_name}</td>
-                <td class="px-4 py-2 border-b">${user.email || '-'}</td>
-                <td class="px-4 py-2 border-b">${user.role}</td>
-                <td class="px-4 py-2 border-b">${user.is_active ? '<span class="text-green-500">Actif</span>' : '<span class="text-red-500">Inactif</span>'}</td>
-                <td class="px-4 py-2 border-b text-right">
-                    <button data-id="${user.id}" class="edit-user-btn text-indigo-600 hover:text-indigo-900 mr-2"><i class="fas fa-edit"></i></button>
-                    <button data-id="${user.id}" class="delete-user-btn text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
+                <td class="px-4 py-2 border-b text-sm">${user.username}</td>
+                <td class="px-4 py-2 border-b text-sm">${user.full_name}</td>
+                <td class="px-4 py-2 border-b text-sm">${user.email || '-'}</td>
+                <td class="px-4 py-2 border-b text-sm">${user.role}</td>
+                <td class="px-4 py-2 border-b text-sm">${user.is_active ? '<span class="text-green-600 font-semibold">Actif</span>' : '<span class="text-red-600 font-semibold">Inactif</span>'}</td>
+                <td class="px-4 py-2 border-b text-sm text-right">
+                    <button data-id="${user.id}" class="edit-user-btn text-indigo-600 hover:text-indigo-800 mr-2" title="Modifier"><i class="fas fa-edit"></i></button>
+                    <button data-id="${user.id}" class="delete-user-btn text-red-600 hover:text-red-800" title="Supprimer"><i class="fas fa-trash"></i></button>
                 </td>
             `;
         });
@@ -103,6 +116,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (userForm) userForm.addEventListener('submit', handleUserFormSubmit);
     async function handleUserFormSubmit(event) {
         event.preventDefault();
+        const originalButtonText = userSubmitButtonText ? userSubmitButtonText.textContent : 'Soumettre';
+        if (userSubmitButton) userSubmitButton.disabled = true;
+        if (userSubmitButtonText) userSubmitButtonText.textContent = currentEditingUserId ? 'Sauvegarde...' : 'Création...';
+
         const formData = {
             username: usernameInput.value,
             full_name: userFullNameInput.value,
@@ -110,12 +127,21 @@ document.addEventListener('DOMContentLoaded', () => {
             role: userRoleSelect.value,
             is_active: userIsActiveCheckbox.checked
         };
-        if (!currentEditingUserId && userPasswordInput.value) { // Password only for create or if explicitly changing
-            formData.password = userPasswordInput.value;
+
+        if (!currentEditingUserId && !userPasswordInput.value) {
+             showGlobalNotification("Le mot de passe est requis pour la création d'un utilisateur.", "error");
+             if (userSubmitButton) userSubmitButton.disabled = false;
+             if (userSubmitButtonText) userSubmitButtonText.textContent = originalButtonText;
+             return;
+        }
+        if (userPasswordInput.value) {
             if (userPasswordInput.value !== userConfirmPasswordInput.value) {
-                showNotification("Les mots de passe ne correspondent pas.", "error");
+                showGlobalNotification("Les mots de passe ne correspondent pas.", "error");
+                if (userSubmitButton) userSubmitButton.disabled = false;
+                if (userSubmitButtonText) userSubmitButtonText.textContent = originalButtonText;
                 return;
             }
+            formData.password = userPasswordInput.value;
         }
 
         const method = currentEditingUserId ? 'PUT' : 'POST';
@@ -129,56 +155,70 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const responseData = await response.json();
             if (response.ok) {
-                showNotification(currentEditingUserId ? 'Utilisateur mis à jour!' : 'Utilisateur créé!', 'success');
+                showGlobalNotification(currentEditingUserId ? 'Utilisateur mis à jour avec succès!' : 'Utilisateur créé avec succès!', 'success');
                 fetchUsers();
                 resetUserForm();
                 if(userFormSection) userFormSection.classList.add('hidden');
             } else {
-                const errors = responseData.errors ? Object.values(responseData.errors).join(', ') : (responseData.error || "Erreur inconnue");
-                showNotification(`Erreur: ${errors}`, 'error');
+                if (response.status === 422 && responseData.errors) {
+                    const errors = Object.entries(responseData.errors).map(([field, msg]) => `${field}: ${msg}`).join('; ');
+                    showGlobalNotification(`Erreurs de validation: ${errors}`, 'error');
+                } else if (!await handleApiError(response)) {
+                     const errorMsg = responseData.error || responseData.message || "Erreur lors de la soumission du formulaire utilisateur.";
+                     showGlobalNotification(`Erreur: ${errorMsg}`, 'error');
+                }
             }
         } catch (error) {
             console.error('Error submitting user form:', error);
-            showNotification('Erreur réseau.', 'error');
+            showGlobalNotification('Erreur réseau lors de la soumission.', 'error');
+        } finally {
+            if (userSubmitButton) userSubmitButton.disabled = false;
+            if (userSubmitButtonText) userSubmitButtonText.textContent = originalButtonText;
         }
     }
 
     async function editUser(userId) {
         try {
             const response = await fetch(`/api/admin/users/${userId}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-            if (!response.ok) throw new Error('Utilisateur non trouvé');
+            if (!response.ok) {
+                await handleApiError(response);
+                throw new Error('Utilisateur non trouvé ou accès refusé');
+            }
             const user = await response.json();
 
             if(userFormTitle) userFormTitle.textContent = "Modifier l'Utilisateur";
-            if(userSubmitButton) userSubmitButton.innerHTML = '<i class="fas fa-save mr-1"></i> Mettre à jour Utilisateur';
+            if(userSubmitButtonText) userSubmitButtonText.textContent = 'Mettre à jour';
             currentEditingUserId = user.id;
-            userIdInput.value = user.id;
+            if(userIdInput) userIdInput.value = user.id;
             usernameInput.value = user.username;
             userFullNameInput.value = user.full_name;
             userEmailInput.value = user.email || '';
             userRoleSelect.value = user.role;
             userIsActiveCheckbox.checked = user.is_active;
+            userPasswordInput.value = '';
+            userConfirmPasswordInput.value = '';
             userPasswordInput.placeholder = "Laisser vide pour ne pas changer";
             userConfirmPasswordInput.placeholder = "Laisser vide pour ne pas changer";
+            if(serviceFormSection) serviceFormSection.classList.add('hidden');
             if(userFormSection) userFormSection.classList.remove('hidden');
         } catch (error) {
-            showNotification(`Erreur: ${error.message}`, 'error');
+            showGlobalNotification(`Erreur lors du chargement de l'utilisateur: ${error.message}`, 'error');
         }
     }
 
     async function deleteUser(userId) {
-        if (!confirm(`Supprimer l'utilisateur ID ${userId}? Cette action est irréversible.`)) return;
+        if (!confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur ID ${userId}? Cette action est irréversible.`)) return;
         try {
             const response = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-            if (response.ok) { // 204 No Content
-                showNotification('Utilisateur supprimé!', 'success');
+            if (response.ok || response.status === 204) {
+                showGlobalNotification('Utilisateur supprimé avec succès!', 'success');
                 fetchUsers();
+                 if (currentEditingUserId == userId) { resetUserForm(); userFormSection.classList.add('hidden');}
             } else {
-                const responseData = await response.json().catch(()=>null);
-                showNotification(`Erreur: ${responseData?.error || response.statusText}`, 'error');
+                await handleApiError(response);
             }
         } catch (error) {
-            showNotification('Erreur réseau.', 'error');
+            showGlobalNotification('Erreur réseau lors de la suppression de l\'utilisateur.', 'error');
         }
     }
 
@@ -187,21 +227,32 @@ document.addEventListener('DOMContentLoaded', () => {
         currentEditingUserId = null;
         if(userIdInput) userIdInput.value = '';
         if(userFormTitle) userFormTitle.textContent = "Ajouter un Nouvel Utilisateur";
-        if(userSubmitButton) userSubmitButton.innerHTML = '<i class="fas fa-plus-circle mr-1"></i> Ajouter Utilisateur';
+        if(userSubmitButtonText) userSubmitButtonText.textContent = 'Ajouter';
         if(userPasswordInput) userPasswordInput.placeholder = "Mot de passe";
         if(userConfirmPasswordInput) userConfirmPasswordInput.placeholder = "Confirmer mot de passe";
     }
 
     // --- Service Management ---
     async function fetchServices() {
+        if(servicesTableLoading) servicesTableLoading.classList.remove('hidden');
+        if(servicesTableContainer) servicesTableContainer.classList.add('hidden');
          try {
             const response = await fetch('/api/admin/services', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-            if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-            servicesList = await response.json();
-            renderServicesTable(servicesList.data || servicesList);
+            if (!response.ok) {
+                await handleApiError(response);
+                servicesList = [];
+            } else {
+                const result = await response.json();
+                servicesList = result.data || result;
+            }
+            renderServicesTable(servicesList);
         } catch (error) {
             console.error('Error fetching services:', error);
-            showNotification('Erreur de chargement des services.', 'error');
+            showGlobalNotification('Erreur réseau lors du chargement des services.', 'error');
+            renderServicesTable([]);
+        } finally {
+            if(servicesTableLoading) servicesTableLoading.classList.add('hidden');
+            if(servicesTableContainer) servicesTableContainer.classList.remove('hidden');
         }
     }
 
@@ -215,13 +266,13 @@ document.addEventListener('DOMContentLoaded', () => {
         services.forEach(service => {
             const row = servicesTableBody.insertRow();
             row.innerHTML = `
-                <td class="px-4 py-2 border-b">${service.name}</td>
-                <td class="px-4 py-2 border-b">${service.description || '-'}</td>
-                <td class="px-4 py-2 border-b">${service.default_commission_rate !== null ? service.default_commission_rate + '%' : '-'}</td>
-                <td class="px-4 py-2 border-b">${service.is_active ? '<span class="text-green-500">Actif</span>' : '<span class="text-red-500">Inactif</span>'}</td>
-                <td class="px-4 py-2 border-b text-right">
-                    <button data-id="${service.id}" class="edit-service-btn text-indigo-600 hover:text-indigo-900 mr-2"><i class="fas fa-edit"></i></button>
-                    <button data-id="${service.id}" class="delete-service-btn text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
+                <td class="px-4 py-2 border-b text-sm">${service.name}</td>
+                <td class="px-4 py-2 border-b text-sm">${service.description || '-'}</td>
+                <td class="px-4 py-2 border-b text-sm">${service.default_commission_rate !== null ? service.default_commission_rate + '%' : '-'}</td>
+                <td class="px-4 py-2 border-b text-sm">${service.is_active ? '<span class="text-green-600 font-semibold">Actif</span>' : '<span class="text-red-500 font-semibold">Inactif</span>'}</td>
+                <td class="px-4 py-2 border-b text-sm text-right">
+                    <button data-id="${service.id}" class="edit-service-btn text-indigo-600 hover:text-indigo-800 mr-2" title="Modifier"><i class="fas fa-edit"></i></button>
+                    <button data-id="${service.id}" class="delete-service-btn text-red-600 hover:text-red-800" title="Supprimer"><i class="fas fa-trash"></i></button>
                 </td>
             `;
         });
@@ -232,6 +283,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if(serviceForm) serviceForm.addEventListener('submit', handleServiceFormSubmit);
     async function handleServiceFormSubmit(event) {
         event.preventDefault();
+        const originalButtonText = serviceSubmitButtonText ? serviceSubmitButtonText.textContent : 'Soumettre';
+        if(serviceSubmitButton) serviceSubmitButton.disabled = true;
+        if(serviceSubmitButtonText) serviceSubmitButtonText.textContent = currentEditingServiceId ? 'Sauvegarde...' : 'Création...';
+
         const formData = {
             name: serviceNameInput.value,
             description: serviceDescriptionInput.value,
@@ -250,52 +305,64 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const responseData = await response.json();
             if (response.ok) {
-                showNotification(currentEditingServiceId ? 'Service mis à jour!' : 'Service créé!', 'success');
+                showGlobalNotification(currentEditingServiceId ? 'Service mis à jour avec succès!' : 'Service créé avec succès!', 'success');
                 fetchServices();
                 resetServiceForm();
                 if(serviceFormSection) serviceFormSection.classList.add('hidden');
             } else {
-                const errors = responseData.errors ? Object.values(responseData.errors).join(', ') : (responseData.error || "Erreur inconnue");
-                showNotification(`Erreur: ${errors}`, 'error');
+                 if (response.status === 422 && responseData.errors) {
+                    const errors = Object.entries(responseData.errors).map(([field, msg]) => `${field}: ${msg}`).join('; ');
+                    showGlobalNotification(`Erreurs de validation: ${errors}`, 'error');
+                } else if (!await handleApiError(response)){
+                    const errorMsg = responseData.error || responseData.message || "Erreur lors de la soumission du formulaire service.";
+                    showGlobalNotification(`Erreur: ${errorMsg}`, 'error');
+                }
             }
         } catch (error) {
-            showNotification('Erreur réseau.', 'error');
+            showGlobalNotification('Erreur réseau lors de la soumission.', 'error');
+        } finally {
+            if(serviceSubmitButton) serviceSubmitButton.disabled = false;
+            if(serviceSubmitButtonText) serviceSubmitButtonText.textContent = originalButtonText;
         }
     }
 
     async function editService(serviceId) {
          try {
             const response = await fetch(`/api/admin/services/${serviceId}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-            if (!response.ok) throw new Error('Service non trouvé');
+            if (!response.ok) {
+                await handleApiError(response);
+                throw new Error('Service non trouvé ou accès refusé');
+            }
             const service = await response.json();
 
             if(serviceFormTitle) serviceFormTitle.textContent = "Modifier le Service";
-            if(serviceSubmitButton) serviceSubmitButton.innerHTML = '<i class="fas fa-save mr-1"></i> Mettre à jour Service';
+            if(serviceSubmitButtonText) serviceSubmitButtonText.textContent = 'Mettre à jour';
             currentEditingServiceId = service.id;
-            serviceIdInput.value = service.id;
+            if(serviceIdInput) serviceIdInput.value = service.id;
             serviceNameInput.value = service.name;
             serviceDescriptionInput.value = service.description || '';
             serviceCommissionInput.value = service.default_commission_rate !== null ? service.default_commission_rate : '';
             serviceIsActiveCheckbox.checked = service.is_active;
+            if(userFormSection) userFormSection.classList.add('hidden');
             if(serviceFormSection) serviceFormSection.classList.remove('hidden');
         } catch (error) {
-            showNotification(`Erreur: ${error.message}`, 'error');
+            showGlobalNotification(`Erreur lors du chargement du service: ${error.message}`, 'error');
         }
     }
 
     async function deleteService(serviceId) {
-        if (!confirm(`Supprimer le service ID ${serviceId}? Cela pourrait affecter les opérations existantes.`)) return;
+        if (!confirm(`Êtes-vous sûr de vouloir supprimer le service ID ${serviceId}? Cela pourrait affecter les opérations existantes.`)) return;
         try {
             const response = await fetch(`/api/admin/services/${serviceId}`, { method: 'DELETE', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-            if (response.ok) {
-                showNotification('Service supprimé!', 'success'); // Or "désactivé" if soft delete
+            if (response.ok || response.status === 204) {
+                showGlobalNotification('Service supprimé avec succès!', 'success');
                 fetchServices();
+                if (currentEditingServiceId == serviceId) { resetServiceForm(); serviceFormSection.classList.add('hidden');}
             } else {
-                 const responseData = await response.json().catch(()=>null);
-                showNotification(`Erreur: ${responseData?.error || response.statusText}`, 'error');
+                await handleApiError(response);
             }
         } catch (error) {
-            showNotification('Erreur réseau.', 'error');
+            showGlobalNotification('Erreur réseau lors de la suppression du service.', 'error');
         }
     }
 
@@ -304,25 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentEditingServiceId = null;
         if(serviceIdInput) serviceIdInput.value = '';
         if(serviceFormTitle) serviceFormTitle.textContent = "Ajouter un Nouveau Service";
-        if(serviceSubmitButton) serviceSubmitButton.innerHTML = '<i class="fas fa-plus-circle mr-1"></i> Ajouter Service';
-    }
-
-    // --- General Utilities ---
-    function showNotification(message, type = 'info') { // type = 'info' | 'success' | 'error'
-        if (!globalNotification) return;
-        globalNotification.textContent = message;
-        globalNotification.className = 'mb-4 p-4 rounded-md text-white'; // Reset classes
-        if (type === 'success') {
-            globalNotification.classList.add('bg-green-500');
-        } else if (type === 'error') {
-            globalNotification.classList.add('bg-red-500');
-        } else {
-            globalNotification.classList.add('bg-blue-500');
-        }
-        globalNotification.classList.remove('hidden');
-        setTimeout(() => {
-            globalNotification.classList.add('hidden');
-        }, 5000);
+        if(serviceSubmitButtonText) serviceSubmitButtonText.textContent = 'Ajouter';
     }
 
     // Initial data load

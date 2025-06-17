@@ -396,4 +396,28 @@ class OperationController extends Controller {
 
         return $errors;
     }
+
+    /**
+     * Export operations list to PDF.
+     * Placeholder for future implementation.
+     */
+    public function exportPDF(): void {
+        // TODO: Implement PDF export logic
+        // 1. Fetch operations (similar to index(), possibly with filters from GET params)
+        // 2. Use a PDF library (e.g., TCPDF, DomPDF) to generate the PDF
+        // 3. Set appropriate headers and output the PDF
+        $this->jsonResponse(['message' => 'PDF export endpoint for operations (not implemented yet)']);
+    }
+
+    /**
+     * Export operations list to Excel.
+     * Placeholder for future implementation.
+     */
+    public function exportExcel(): void {
+        // TODO: Implement Excel export logic
+        // 1. Fetch operations
+        // 2. Use a library (e.g., PhpSpreadsheet) to generate Excel file
+        // 3. Set appropriate headers and output the file
+        $this->jsonResponse(['message' => 'Excel export endpoint for operations (not implemented yet)']);
+    }
 }

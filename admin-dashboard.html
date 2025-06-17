@@ -59,13 +59,13 @@
     <script src="public/js/common.js"></script> <!-- Include common.js -->
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
-        <div class="sidebar bg-indigo-900 text-white w-64 md:w-20 lg:w-64 flex-shrink-0 transition-all duration-300 ease-in-out overflow-y-auto">
+        <div id="sidebar" class="sidebar bg-indigo-900 text-white w-64 fixed inset-y-0 left-0 z-30 transform -translate-x-full transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:w-20 lg:w-64 flex-shrink-0 overflow-y-auto">
             <div class="p-4 flex items-center justify-between">
                 <div class="flex items-center">
                     <i class="fas fa-hand-holding-usd text-2xl mr-2"></i>
-                    <span class="text-xl font-semibold hidden md:hidden lg:inline">MultiService</span>
+                    <span class="text-xl font-semibold hidden md:hidden lg:inline" id="sidebar-logo-text">MultiService</span>
                 </div>
-                <button id="sidebarToggle" class="md:block lg:hidden text-white focus:outline-none">
+                <button id="sidebarToggle" class="hidden md:block lg:hidden text-white focus:outline-none"> <!-- Hide on mobile, use mobileSidebarToggle -->
                     <i class="fas fa-bars"></i>
                 </button>
             </div>
@@ -102,9 +102,9 @@
         </div>
 
         <!-- Main Content -->
-        <div class="flex-1 overflow-auto">
+        <div class="flex-1 overflow-auto md:ml-20 lg:ml-64 transition-all duration-300 ease-in-out">
             <!-- Header -->
-            <header class="bg-white shadow-sm py-4 px-6 flex items-center justify-between">
+            <header class="bg-white shadow-sm py-4 px-6 flex items-center justify-between sticky top-0 z-20">
                 <div class="flex items-center">
                     <button id="mobileSidebarToggle" class="mr-4 text-gray-600 focus:outline-none md:hidden">
                         <i class="fas fa-bars"></i>
@@ -603,25 +603,38 @@
 
         // Fonction pour gérer le toggle de la sidebar
         function setupSidebarToggle() {
-            // Toggle sidebar on mobile
-            document.getElementById('mobileSidebarToggle').addEventListener('click', function() {
-                document.querySelector('.sidebar').classList.toggle('-translate-x-full');
-            });
+            const sidebar = document.getElementById('sidebar');
+            const mobileToggle = document.getElementById('mobileSidebarToggle');
+            const desktopToggle = document.getElementById('sidebarToggle'); // For md to lg toggle
+            const sidebarLogoText = document.getElementById('sidebar-logo-text');
+            const sidebarSpans = sidebar.querySelectorAll('nav span.hidden'); // Target spans that should hide/show
 
-            // Toggle sidebar on desktop
-            document.getElementById('sidebarToggle').addEventListener('click', function() {
-                document.querySelector('.sidebar').classList.toggle('w-64');
-                document.querySelector('.sidebar').classList.toggle('w-20');
-                
-                // Toggle text visibility in sidebar items
-                const sidebarTexts = document.querySelectorAll('.sidebar-item span');
-                sidebarTexts.forEach(text => {
-                    text.classList.toggle('hidden');
+            if (mobileToggle && sidebar) {
+                mobileToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('-translate-x-full');
+                    sidebar.classList.toggle('translate-x-0'); // Ensure it comes into view
+                    // Optional: Add overlay for mobile
                 });
-                
-                // Toggle logo text
-                document.querySelector('.sidebar .text-xl').classList.toggle('hidden');
-            });
+            }
+
+            if (desktopToggle && sidebar) {
+                desktopToggle.addEventListener('click', function() {
+                    // This button is for md screens to toggle between w-20 and w-64 (when lg styles not active)
+                    // On lg screens, the sidebar is w-64 by default and this button is hidden by lg:hidden
+                    // On md screens, it's w-20 by default. Clicking should expand it to w-64.
+                    if (sidebar.classList.contains('md:w-20')) { // If it's currently narrow on md
+                        sidebar.classList.remove('md:w-20');
+                        sidebar.classList.add('md:w-64');
+                        if(sidebarLogoText) sidebarLogoText.classList.remove('md:hidden');
+                        sidebarSpans.forEach(span => span.classList.remove('md:hidden'));
+                    } else { // If it's currently expanded on md
+                        sidebar.classList.remove('md:w-64');
+                        sidebar.classList.add('md:w-20');
+                        if(sidebarLogoText) sidebarLogoText.classList.add('md:hidden');
+                        sidebarSpans.forEach(span => span.classList.add('md:hidden'));
+                    }
+                });
+            }
         }
 
         // Fonction pour mettre en surbrillance l'élément actif de la sidebar

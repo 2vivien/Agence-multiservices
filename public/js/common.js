@@ -80,3 +80,132 @@ async function logoutUser() {
 // checkAuthStatusAndRedirect();
 // Note: Calling checkAuthStatusAndRedirect() globally might not be suitable for all pages (e.g. index.html itself).
 // It's better to call it explicitly at the start of scripts for protected pages.
+
+
+/**
+ * Displays a global notification message.
+ * @param {string} message The message to display.
+ * @param {string} type 'success', 'error', 'info', or 'warning'.
+ */
+function showGlobalNotification(message, type = 'info') {
+    const container = document.getElementById('global-notification-container') || createNotificationContainer();
+
+    const notification = document.createElement('div');
+    notification.className = `p-4 mb-4 rounded-md text-sm`;
+
+    let bgColor, textColor, borderColor, iconClass;
+
+    switch (type) {
+        case 'success':
+            bgColor = 'bg-green-100';
+            textColor = 'text-green-700';
+            borderColor = 'border-green-500';
+            iconClass = 'fas fa-check-circle';
+            break;
+        case 'error':
+            bgColor = 'bg-red-100';
+            textColor = 'text-red-700';
+            borderColor = 'border-red-500';
+            iconClass = 'fas fa-exclamation-circle';
+            break;
+        case 'warning':
+            bgColor = 'bg-yellow-100';
+            textColor = 'text-yellow-700';
+            borderColor = 'border-yellow-500';
+            iconClass = 'fas fa-exclamation-triangle';
+            break;
+        case 'info':
+        default:
+            bgColor = 'bg-blue-100';
+            textColor = 'text-blue-700';
+            borderColor = 'border-blue-500';
+            iconClass = 'fas fa-info-circle';
+            break;
+    }
+
+    notification.classList.add(bgColor, textColor, borderColor, 'border-l-4');
+    notification.innerHTML = `<i class="${iconClass} mr-2"></i> ${message}`;
+
+    container.appendChild(notification);
+
+    // Auto-dismiss
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transition = 'opacity 0.5s ease';
+        setTimeout(() => notification.remove(), 500);
+    }, 5000); // Dismiss after 5 seconds
+
+    // Allow manual dismiss
+    notification.addEventListener('click', () => {
+        notification.remove();
+    });
+}
+
+function createNotificationContainer() {
+    let container = document.getElementById('global-notification-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'global-notification-container';
+        container.className = 'fixed top-5 right-5 z-50 w-full max-w-sm';
+        document.body.appendChild(container);
+    }
+    return container;
+}
+
+
+/**
+ * Handles common API error responses.
+ * @param {Response} response The Fetch API response object.
+ * @param {string} [targetErrorElementId] Optional ID of an element to display specific 500/400 errors.
+ * @returns {Promise<boolean>} True if error was handled (e.g. redirect), false otherwise (caller might do more).
+ */
+async function handleApiError(response, targetErrorElementId = null) {
+    if (response.status === 401) {
+        showGlobalNotification('Session expirée ou non authentifié. Redirection...', 'error');
+        // Delay logoutUser slightly to allow notification to be seen if possible
+        setTimeout(() => logoutUser(), 1500);
+        return true;
+    }
+    if (response.status === 403) {
+        // It's better to have the calling page redirect to acces.html if it's a page-level access issue.
+        // For API calls within an authorized page, a global notification might be better than redirect.
+        // For now, redirect as per original plan.
+        showGlobalNotification('Accès refusé à cette ressource ou action.', 'error');
+        // Consider if acces.html should take a message. For now, generic.
+        setTimeout(() => window.location.href = 'acces.html', 1500);
+        return true;
+    }
+
+    // For other errors (400, 404, 422 not handled by caller, 500)
+    // 422 should ideally be handled by caller to display field-specific errors.
+    if (!response.ok) {
+        let errorMsg = `Erreur ${response.status}: ${response.statusText}`;
+        try {
+            const errorData = await response.json();
+            if (errorData && errorData.error) {
+                errorMsg = errorData.error;
+            } else if (errorData && errorData.errors && typeof errorData.errors === 'object') {
+                // For 422 errors, join messages if not handled by caller
+                errorMsg = Object.values(errorData.errors).flat().join('; ');
+            } else if (errorData && errorData.message) {
+                 errorMsg = errorData.message;
+            }
+        } catch (e) {
+            // Failed to parse JSON, use statusText
+        }
+
+        if (targetErrorElementId) {
+            const errorEl = document.getElementById(targetErrorElementId);
+            if (errorEl) {
+                errorEl.textContent = errorMsg;
+                errorEl.classList.remove('hidden'); // Assuming it's hidden by default
+            } else {
+                 showGlobalNotification(errorMsg, 'error');
+            }
+        } else {
+            showGlobalNotification(errorMsg, 'error');
+        }
+        return true; // Error was displayed
+    }
+    return false; // No error handled by this function
+}

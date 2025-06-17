@@ -30,20 +30,30 @@ return [
     'GET /api/operations/{id}' => [\App\Controllers\OperationController::class, 'show'],
     'PUT /api/operations/{id}' => [\App\Controllers\OperationController::class, 'update'],
     'DELETE /api/operations/{id}' => [\App\Controllers\OperationController::class, 'destroy'],
+    // Export routes for Operations
+    'GET /api/operations/export/pdf' => [\App\Controllers\OperationController::class, 'exportPDF'],
+    'GET /api/operations/export/excel' => [\App\Controllers\OperationController::class, 'exportExcel'],
 
     // Routes for fetching services and operation types (for forms, etc.)
     'GET /api/services' => [\App\Controllers\ServiceController::class, 'index'],
     'GET /api/operation-types' => [\App\Controllers\OperationTypeController::class, 'index'],
 
     // Cloture routes
-    'GET /api/cloture/today' => [\App\Controllers\ClotureController::class, 'getClotureDataToday'],
-    'POST /api/cloture/submit' => [\App\Controllers\ClotureController::class, 'submitCloture'],
+    'GET /api/cloture/today' => [\App\Controllers\ClotureController::class, 'getClotureDataToday'], // For current gerant's process
+    'POST /api/cloture/submit' => [\App\Controllers\ClotureController::class, 'submitCloture'], // For current gerant's process
+    'GET /api/admin/daily-summaries' => [\App\Controllers\ClotureController::class, 'getDailySummariesForAdmin'], // Admin view
+    'GET /api/gerant/daily-summaries' => [\App\Controllers\ClotureController::class, 'getGerantDailySummaries'], // Gerant view of their own summaries
 
     // Statistique routes
     'GET /api/stats/overall' => [\App\Controllers\StatistiqueController::class, 'getOverallStats'],
     'GET /api/stats/services' => [\App\Controllers\StatistiqueController::class, 'getServiceBasedStats'],
     'GET /api/stats/financial-summary' => [\App\Controllers\StatistiqueController::class, 'getFinancialSummary'],
     'GET /api/stats/user-activity' => [\App\Controllers\StatistiqueController::class, 'getUserActivityStats'],
+    // Export routes for Statistics
+    'GET /api/stats/services/export/pdf' => [\App\Controllers\StatistiqueController::class, 'exportServiceStatsPDF'],
+    'GET /api/stats/services/export/excel' => [\App\Controllers\StatistiqueController::class, 'exportServiceStatsExcel'],
+    'GET /api/stats/financial-summary/export/pdf' => [\App\Controllers\StatistiqueController::class, 'exportFinancialSummaryPDF'],
+    'GET /api/stats/financial-summary/export/excel' => [\App\Controllers\StatistiqueController::class, 'exportFinancialSummaryExcel'],
 
     // Admin - User Management
     'GET /api/admin/users' => [\App\Controllers\UserController::class, 'index'],

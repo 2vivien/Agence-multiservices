@@ -57,9 +57,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
-                if (response.status === 401 || response.status === 403) logoutUser();
-                showError(errorData.error || `Erreur ${response.status} lors de la récupération des données de clôture.`);
+                await handleApiError(response, 'cloture-error-message');
+                // If handleApiError caused a redirect, the rest won't run.
+                // Otherwise, we might want to clear some fields or show specific UI changes.
                 return;
             }
 
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('Error fetching cloture data:', error);
-            showError('Une erreur réseau est survenue. Impossible de charger les données de clôture.');
+            showGlobalNotification('Une erreur réseau est survenue. Impossible de charger les données de clôture.', 'error');
         } finally {
             if (loadingIndicator) loadingIndicator.classList.add('hidden');
         }
@@ -171,24 +171,31 @@ document.addEventListener('DOMContentLoaded', () => {
             const responseData = await response.json();
 
             if (response.ok) {
-                showSuccess(`Clôture réussie! Écart: ${formatCurrency(responseData.balance.difference_amount)}. La page va se rafraîchir.`);
+                showGlobalNotification(`Clôture réussie! Écart: ${formatCurrency(responseData.balance.difference_amount)}. La page va se rafraîchir.`, 'success');
                 // Disable form, maybe refresh page or redirect after a delay
                 if (clotureForm) clotureForm.reset();
                 if (actualFinalAmountInput) actualFinalAmountInput.disabled = true;
                 if (clotureNotesInput) clotureNotesInput.disabled = true;
                 if (submitButton) submitButton.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Clôturée!';
-                setTimeout(() => window.location.reload(), 5000); // Refresh after 5s
+                document.dispatchEvent(new CustomEvent('clotureSubmitted')); // Dispatch event
+                setTimeout(() => window.location.reload(), 5000);
             } else {
-                showError(responseData.error || responseData.errors?.actual_final_amount || 'Erreur lors de la soumission de la clôture.');
+                if (response.status === 422 && responseData.errors) {
+                    const errors = Object.entries(responseData.errors).map(([field, msg]) => `${field}: ${msg}`).join('; ');
+                    showGlobalNotification(`Erreurs de validation: ${errors}`, 'error');
+                } else if (!await handleApiError(response, 'cloture-error-message')) {
+                    const errorMsg = responseData.error || responseData.message || "Erreur lors de la soumission de la clôture.";
+                    showGlobalNotification(errorMsg, 'error');
+                }
                  if (submitButton) submitButton.disabled = false;
-                 if (submitButton) submitButton.innerHTML = 'Clôturer la Journée';
+                 if (submitButton) submitButton.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Clôturer la Journée'; // Reset text
             }
 
-        } catch (error) {
+        } catch (error) { // Network error
             console.error('Error submitting cloture:', error);
-            showError('Une erreur réseau est survenue lors de la soumission.');
+            showGlobalNotification('Une erreur réseau est survenue lors de la soumission.', 'error');
             if (submitButton) submitButton.disabled = false;
-            if (submitButton) submitButton.innerHTML = 'Clôturer la Journée';
+            if (submitButton) submitButton.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Clôturer la Journée'; // Reset text
         }
     }
 
@@ -197,22 +204,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (errorMessageEl) errorMessageEl.classList.add('hidden');
     }
 
-    function showSuccess(message) {
+    function showSuccess(message) { // To be removed if not used
         hideMessages();
         if (successMessageEl) {
             successMessageEl.textContent = message;
             successMessageEl.classList.remove('hidden');
         } else {
-            alert(message); // Fallback
+            showGlobalNotification(message, 'success'); // Fallback to global
         }
     }
-    function showError(message) {
+    function showError(message) { // To be removed if not used
         hideMessages();
         if (errorMessageEl) {
             errorMessageEl.textContent = message;
             errorMessageEl.classList.remove('hidden');
         } else {
-            alert(message); // Fallback
+            showGlobalNotification(message, 'error'); // Fallback to global
         }
     }
 

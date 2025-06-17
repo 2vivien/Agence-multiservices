@@ -38,22 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            if (response.status === 401 || response.status === 403) {
-                // Unauthorized or Forbidden
-                console.warn('Access denied to dashboard data. Status:', response.status);
-                // checkAuthStatusAndRedirect should ideally handle this, or redirect here.
-                localStorage.removeItem('isAuthenticated'); // Force clear auth
-                localStorage.removeItem('userRole');
-                localStorage.removeItem('userName');
-                window.location.href = 'index.html'; // Redirect to login
-                return;
-            }
-
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
-                console.error('Error fetching dashboard data:', response.status, errorData);
-                showErrorInPage(`Erreur ${response.status}: ${errorData.error || 'Impossible de charger les données du tableau de bord.'}`);
-                return;
+                // Let handleApiError deal with 401, 403, 500, etc.
+                // 'dashboard-error-message' is the ID of an element in gerant-dashboard.html for specific errors.
+                await handleApiError(response, 'dashboard-error-message');
+                // If handleApiError caused a redirect or handled the display, we might not need to do more.
+                // For this dashboard, if data isn't loaded, it just shows N/A or empty sections.
+                return; // Stop further processing if there was a significant error
             }
 
             const data = await response.json();
@@ -82,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('Network or parsing error fetching dashboard data:', error);
-            showErrorInPage('Une erreur réseau est survenue. Veuillez vérifier votre connexion.');
+            showGlobalNotification('Une erreur réseau est survenue lors du chargement des données. Veuillez vérifier votre connexion.', 'error');
         } finally {
             setLoadingState(false);
         }
@@ -159,15 +150,15 @@ document.addEventListener('DOMContentLoaded', () => {
      * Displays an error message in a designated area on the page.
      * @param {string} message - The error message to display.
      */
-    function showErrorInPage(message) {
-        const errorDisplayElement = document.getElementById('dashboard-error-message'); // Assuming an element with this ID exists
-        if (errorDisplayElement) {
-            errorDisplayElement.textContent = message;
-            errorDisplayElement.classList.remove('hidden');
-        } else {
-            alert(message); // Fallback
-        }
-    }
+    // function showErrorInPage(message) { // Replaced by showGlobalNotification or handleApiError's target element
+    //     const errorDisplayElement = document.getElementById('dashboard-error-message');
+    //     if (errorDisplayElement) {
+    //         errorDisplayElement.textContent = message;
+    //         errorDisplayElement.classList.remove('hidden');
+    //     } else {
+    //         showGlobalNotification(message, 'error'); // Fallback to global if specific element not found
+    //     }
+    // }
 
     // Helper to format currency (FCFA example)
     function formatCurrency(amount) {
@@ -196,4 +187,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // If the logout button with id="logoutBtn" exists, and common.js is correctly included and its
     // logoutUser() is attached to this button's click event, it should work.
     // The previous modification to gerant-dashboard.html already set up its logout button to call logoutUser().
+
+    // Listen for custom events to refresh dashboard data
+    document.addEventListener('operationsUpdated', function() {
+        console.log('Dashboard detected operationsUpdated event. Refreshing data...');
+        showGlobalNotification('Mise à jour des opérations détectée, rafraîchissement du dashboard...', 'info');
+        fetchDashboardData();
+    });
+
+    document.addEventListener('clotureSubmitted', function() {
+        console.log('Dashboard detected clotureSubmitted event. Refreshing data...');
+        showGlobalNotification('Clôture soumise détectée, rafraîchissement du dashboard...', 'info');
+        fetchDashboardData();
+    });
 });

@@ -338,4 +338,94 @@ class Balance extends Model {
         $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Get daily balance summaries with filtering and pagination.
+     * Fetches global daily balances (where service_id is NULL).
+     * @param array $filters Associative array of filters (user_id, date_specific, date_from, date_to).
+     * @param int $limit
+     * @param int $offset
+     * @return array ['data' => array of Balance objects with user info, 'total' => total record count]
+     */
+    public static function getSummaries(array $filters = [], int $limit = 10, int $offset = 0): array {
+        $params = [];
+        $countParams = []; // Separate params for count query to avoid issues with LIMIT/OFFSET
+
+        // Base SQL for fetching data
+        $sql = "SELECT b.*, u.username AS gerant_username, u.full_name AS gerant_fullname
+                FROM " . (new static())->table . " b
+                JOIN users u ON b.user_id = u.id";
+
+        // Always filter for global daily balances in this context
+        $whereClauses = ["b.service_id IS NULL"]; // Key change: only global summaries
+
+        // Date filters
+        if (!empty($filters['date_specific'])) {
+            $whereClauses[] = "b.balance_date = :date_specific";
+            $params[':date_specific'] = $filters['date_specific'];
+            $countParams[':date_specific'] = $filters['date_specific'];
+        } else {
+            if (!empty($filters['date_from'])) {
+                $whereClauses[] = "b.balance_date >= :date_from";
+                $params[':date_from'] = $filters['date_from'];
+                $countParams[':date_from'] = $filters['date_from'];
+            }
+            if (!empty($filters['date_to'])) {
+                $whereClauses[] = "b.balance_date <= :date_to";
+                $params[':date_to'] = $filters['date_to'];
+                $countParams[':date_to'] = $filters['date_to'];
+            }
+        }
+
+        // User filter
+        if (!empty($filters['user_id'])) {
+            $whereClauses[] = "b.user_id = :user_id";
+            $params[':user_id'] = $filters['user_id'];
+            $countParams[':user_id'] = $filters['user_id'];
+        }
+
+        if (!empty($whereClauses)) {
+            $sql .= " WHERE " . implode(" AND ", $whereClauses);
+        }
+
+        // Get total count for pagination
+        $countSql = "SELECT COUNT(b.id) as total FROM " . (new static())->table . " b ";
+        if (!empty($whereClauses)) {
+            $countSql .= " WHERE " . implode(" AND ", $whereClauses);
+        }
+        $countStmt = self::db()->prepare($countSql);
+        $countStmt->execute($countParams);
+        $totalRecords = (int)$countStmt->fetchColumn();
+
+        // Add ordering and pagination to main query
+        $sql .= " ORDER BY b.balance_date DESC, u.username ASC";
+        $sql .= " LIMIT :limit OFFSET :offset";
+        $params[':limit'] = $limit;
+        $params[':offset'] = $offset;
+
+        $stmt = self::db()->prepare($sql);
+        foreach ($params as $paramKey => $value) {
+             $stmt->bindValue($paramKey, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->execute();
+
+        // Fetch as associative arrays to include gerant_username and gerant_fullname
+        $summariesData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Optionally, hydrate to Balance objects and manually add user details, or keep as assoc array.
+        // For simplicity, returning assoc array here. If Balance objects are needed, hydration needs care.
+        // $hydratedSummaries = [];
+        // foreach ($summariesData as $data) {
+        //     $balance = new static();
+        //     // ... (manual hydration similar to findByUserDateService) ...
+        //     $balance->gerant_username = $data['gerant_username']; // Example of adding extra data
+        //     $balance->gerant_fullname = $data['gerant_fullname'];
+        //     $hydratedSummaries[] = $balance;
+        // }
+
+        return [
+            'data' => $summariesData, // $hydratedSummaries if objects are preferred
+            'total' => $totalRecords
+        ];
+    }
 }

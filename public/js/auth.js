@@ -73,12 +73,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         setTimeout(() => window.location.href = 'index.html', 2000);
                     }
                 } else {
-                    // Login failed
-                    showError(data.error || 'Erreur de connexion. Veuillez réessayer.');
+                    // Login failed - handleApiError will be called if !response.ok
+                    // but if it's a specific logic error like "wrong password" (401 handled by handleApiError already)
+                    // or a custom error structure from this specific endpoint:
+                    if (!response.ok && !await handleApiError(response, 'errorMessage')) { // Pass error message div ID
+                        showError(data.error || 'Erreur de connexion. Veuillez réessayer.');
+                    } else if (!response.ok && data.error) { // if handleApiError didn't show it but data.error exists
+                         showError(data.error);
+                    }
+                    // If handleApiError did its job (e.g. for 500), showError might not be needed.
                 }
-            } catch (error) {
+            } catch (error) { // Network errors or other JS errors
                 console.error('Login error:', error);
-                showError('Une erreur technique est survenue. Veuillez réessayer plus tard.');
+                showGlobalNotification(error.message || 'Une erreur technique est survenue. Veuillez réessayer plus tard.', 'error');
+                showError('Une erreur technique est survenue. Veuillez réessayer plus tard.'); // Keep local error display too if desired
             } finally {
                 // Reset loading state
                 setLoading(false);
@@ -87,23 +95,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showError(message) {
-        errorMessageDiv.innerHTML = `<p>${message}</p>`; // Ensure message is wrapped in <p> or similar if HTML structure expects it
+        errorMessageDiv.innerHTML = `<p>${message}</p>`;
         errorMessageDiv.classList.remove('hidden');
-        errorMessageDiv.classList.remove('bg-green-50', 'border-green-500', 'text-green-700');
-        errorMessageDiv.classList.add('bg-red-50', 'border-red-500', 'text-red-700');
+        // Ensure styles are correctly applied for error, as global notification won't use this div.
+        errorMessageDiv.classList.remove('bg-green-50', 'border-green-500', 'text-green-700', 'text-green-700');
+        errorMessageDiv.classList.add('bg-red-100', 'border-red-500', 'text-red-700');
     }
 
     function hideError() {
         errorMessageDiv.classList.add('hidden');
     }
 
-    function showSuccess(message) { // Optional, if needed before redirect
-        errorMessageDiv.innerHTML = `<p>${message}</p>`;
-        errorMessageDiv.classList.remove('hidden');
-        errorMessageDiv.classList.remove('bg-red-50', 'border-red-500', 'text-red-700');
-        errorMessageDiv.classList.add('bg-green-50', 'border-green-500', 'text-green-700');
-    }
-
+    // showSuccess is effectively replaced by showGlobalNotification for general success messages
+    // If a specific success message needs to be in errorMessageDiv, this can be adapted.
 
     function setLoading(isLoading) {
         if (isLoading) {

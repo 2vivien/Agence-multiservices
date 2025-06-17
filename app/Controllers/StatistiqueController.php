@@ -229,4 +229,44 @@ class StatistiqueController extends Controller {
         $d = \DateTime::createFromFormat($format, $dateString);
         return $d && $d->format($format) === $dateString;
     }
+
+    /**
+     * Export service-based statistics to PDF.
+     * Placeholder for future implementation.
+     */
+    public function exportServiceStatsPDF(): void {
+        // TODO: Fetch data (similar to getServiceBasedStats)
+        // TODO: Generate PDF
+        $this->jsonResponse(['message' => 'Service Stats PDF export endpoint (not implemented yet)']);
+    }
+
+    /**
+     * Export service-based statistics to Excel.
+     * Placeholder for future implementation.
+     */
+    public function exportServiceStatsExcel(): void {
+        // TODO: Fetch data
+        // TODO: Generate Excel
+        $this->jsonResponse(['message' => 'Service Stats Excel export endpoint (not implemented yet)']);
+    }
+
+    /**
+     * Export financial summary to PDF.
+     * Placeholder for future implementation.
+     */
+    public function exportFinancialSummaryPDF(): void {
+        // TODO: Fetch data (similar to getFinancialSummary)
+        // TODO: Generate PDF
+        $this->jsonResponse(['message' => 'Financial Summary PDF export endpoint (not implemented yet)']);
+    }
+
+    /**
+     * Export financial summary to Excel.
+     * Placeholder for future implementation.
+     */
+    public function exportFinancialSummaryExcel(): void {
+        // TODO: Fetch data
+        // TODO: Generate Excel
+        $this->jsonResponse(['message' => 'Financial Summary Excel export endpoint (not implemented yet)']);
+    }
 }

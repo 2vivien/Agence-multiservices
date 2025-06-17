@@ -105,7 +105,8 @@
                 </form>
             </div>
 
-            <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <div id="users-table-loading" class="text-center py-4 text-gray-500 hidden"><i class="fas fa-spinner fa-spin mr-2"></i>Chargement des utilisateurs...</div>
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden overflow-x-auto" id="users-table-container">
                 <table id="users-table" class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
@@ -163,8 +164,9 @@
                     </div>
                 </form>
             </div>
-            
-            <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+
+            <div id="services-table-loading" class="text-center py-4 text-gray-500 hidden"><i class="fas fa-spinner fa-spin mr-2"></i>Chargement des services...</div>
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden overflow-x-auto" id="services-table-container">
                 <table id="services-table" class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>

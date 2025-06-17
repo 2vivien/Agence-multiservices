@@ -173,4 +173,117 @@ class ClotureController extends Controller {
             $this->jsonResponse(['error' => 'Erreur lors de la soumission de la clôture: ' . $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Get daily summaries for admin view.
+     * Allows filtering by date, date range, and user. Supports pagination.
+     */
+    public function getDailySummariesForAdmin(): void {
+        if ($this->getCurrentUserRole() !== 'admin') {
+            $this->jsonResponse(['error' => 'Forbidden. Admin access required.'], 403);
+            return;
+        }
+
+        $filters = [];
+        $specificDate = $this->get('date');
+        $dateFrom = $this->get('date_from');
+        $dateTo = $this->get('date_to');
+        $userId = $this->get('user_id') ? (int)$this->get('user_id') : null;
+
+        // TODO: Validate date formats (YYYY-MM-DD)
+        if ($specificDate) {
+            // if (!$this->isValidDate($specificDate)) { /* jsonError */ }
+            $filters['date_specific'] = $specificDate;
+        } elseif ($dateFrom || $dateTo) {
+            // if ($dateFrom && !$this->isValidDate($dateFrom)) { /* jsonError */ }
+            // if ($dateTo && !$this->isValidDate($dateTo)) { /* jsonError */ }
+            if ($dateFrom) $filters['date_from'] = $dateFrom;
+            if ($dateTo) $filters['date_to'] = $dateTo;
+        }
+
+        if ($userId) {
+            $filters['user_id'] = $userId;
+        }
+
+        $page = (int)($this->get('page', 1));
+        $limit = (int)($this->get('limit', 15)); // Default limit
+        $offset = ($page - 1) * $limit;
+
+        // $result = Balance::getSummaries($filters, $limit, $offset);
+        // $summaries = $result['data'];
+        // $totalRecords = $result['total'];
+
+        $this->jsonResponse([
+            'message' => 'Daily summaries for admin (not fully implemented)',
+            'filters_applied' => $filters,
+            'pagination' => [
+                'page' => $page,
+                'limit' => $limit,
+                // 'total_records' => $totalRecords, // from Balance::getSummaries
+                // 'total_pages' => ceil($totalRecords / $limit)
+            ],
+            'data' => [] // Placeholder for summaries list
+        ]);
+    }
+
+    // Helper for date validation (can be moved to base Controller if used elsewhere)
+    private function isValidDate(string $dateString, string $format = 'Y-m-d'): bool {
+        $d = \DateTime::createFromFormat($format, $dateString);
+        return $d && $d->format($format) === $dateString;
+    }
+
+    /**
+     * Get daily summaries for the currently authenticated gérant.
+     * Allows filtering by date or date range. Supports pagination.
+     */
+    public function getGerantDailySummaries(): void {
+        // requireAuth('gerant') is already in the constructor.
+        $userId = $this->getCurrentUserId();
+        if (!$userId) { // Should not happen if requireAuth is effective
+            $this->jsonResponse(['error' => 'User not authenticated properly.'], 401);
+            return;
+        }
+
+        $filters = ['user_id' => $userId]; // Always filter by the current gérant's ID
+        $specificDate = $this->get('date');
+        $dateFrom = $this->get('date_from');
+        $dateTo = $this->get('date_to');
+
+        if ($specificDate) {
+            if (!$this->isValidDate($specificDate)) {
+                 $this->jsonResponse(['error' => 'Invalid date format for "date". Use YYYY-MM-DD.'], 400);
+                 return;
+            }
+            $filters['date_specific'] = $specificDate;
+        } elseif ($dateFrom || $dateTo) {
+            if ($dateFrom && !$this->isValidDate($dateFrom)) {
+                 $this->jsonResponse(['error' => 'Invalid date format for "date_from". Use YYYY-MM-DD.'], 400);
+                 return;
+            }
+            if ($dateTo && !$this->isValidDate($dateTo)) {
+                 $this->jsonResponse(['error' => 'Invalid date format for "date_to". Use YYYY-MM-DD.'], 400);
+                 return;
+            }
+            if ($dateFrom) $filters['date_from'] = $dateFrom;
+            if ($dateTo) $filters['date_to'] = $dateTo;
+        }
+
+        $page = (int)($this->get('page', 1));
+        $limit = (int)($this->get('limit', 15));
+        $offset = ($page - 1) * $limit;
+
+        $result = Balance::getSummaries($filters, $limit, $offset);
+
+        $this->jsonResponse([
+            'message' => 'Daily summaries for gérant retrieved successfully.',
+            'filters_applied' => $filters,
+            'pagination' => [
+                'page' => $page,
+                'limit' => $limit,
+                'total_records' => $result['total'],
+                'total_pages' => ceil($result['total'] / $limit)
+            ],
+            'data' => $result['data']
+        ]);
+    }
 }

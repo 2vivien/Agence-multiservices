@@ -241,11 +241,14 @@ class UserController extends Controller {
 
         // Add any other business logic before deletion (e.g., cannot delete last admin)
 
-        $success = User::deleteUser($id);
+        // $success = User::deleteUser($id); // Hard delete
+        $success = User::deactivateUser($id); // Soft delete by marking inactive
         if ($success) {
-            $this->jsonResponse(null, 204); // No Content
+            // Return 200 with the updated user data (now inactive) or 204
+            $updatedUser = User::find($id); // Fetch to show updated state
+            $this->jsonResponse($updatedUser ?? ['message' => 'User deactivated successfully, but could not be refetched immediately.'], 200);
         } else {
-            $this->jsonResponse(['error' => 'Failed to delete user.'], 500);
+            $this->jsonResponse(['error' => 'Failed to deactivate user.'], 500);
         }
     }
 

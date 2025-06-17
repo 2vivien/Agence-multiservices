@@ -242,11 +242,13 @@ class ServiceController extends Controller {
         //     return;
         // }
 
-        $success = Service::deleteService($id); // Or $service->save(['is_active' => false]); for soft delete
+        // $success = Service::deleteService($id); // Hard delete
+        $success = Service::deactivateService($id); // Soft delete
         if ($success) {
-            $this->jsonResponse(null, 204); // No Content
+             $updatedService = Service::find($id); // Fetch to show updated state
+            $this->jsonResponse($updatedService ?? ['message' => 'Service deactivated successfully, but could not be refetched.'], 200);
         } else {
-            $this->jsonResponse(['error' => 'Failed to delete service.'], 500);
+            $this->jsonResponse(['error' => 'Failed to deactivate service.'], 500);
         }
     }
 

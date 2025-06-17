@@ -180,4 +180,16 @@ class Service extends Model {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_CLASS, static::class);
     }
+
+    /**
+     * Deactivate a service by setting is_active to false.
+     * @param int $id The ID of the service to deactivate.
+     * @return bool True on success, false on failure.
+     */
+    public static function deactivateService(int $id): bool {
+        $sql = "UPDATE " . (new static())->table . " SET is_active = FALSE, updated_at = NOW() WHERE id = :id";
+        $stmt = self::db()->prepare($sql);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
 }
