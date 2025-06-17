@@ -16,37 +16,34 @@ class DashboardController extends Controller {
     }
 
     /**
-     * Data for the Gérant (Manager) Dashboard.
+     * Provides data for the Gérant (Manager) Dashboard.
+     * This method checks if the user is authenticated and has the 'gerant' role.
+     * It then fetches and returns relevant dashboard data.
      */
-    public function gerantDashboard(): void {
-        $userId = $this->getCurrentUserId();
-        if (!$userId) {
-            $this->jsonResponse(['error' => 'User not authenticated.'], 401);
+    public function getGerantDashboardData(): void {
+        // requireAuth() is called in constructor. Now check role.
+        if ($this->getCurrentUserRole() !== 'gerant') {
+            $this->jsonResponse(['error' => 'Forbidden. User is not a manager.'], 403);
             return;
         }
 
-        $user = User::find($userId);
-        if (!$user || $user->role !== 'gerant') {
-            // Allow admin to view gerant dashboard if a user_id is passed as a param for impersonation/view
-            $paramUserId = (int)$this->get('user_id');
-            if ($this->getCurrentUserRole() === 'admin' && $paramUserId > 0) {
-                $user = User::find($paramUserId);
-                if (!$user || $user->role !== 'gerant') {
-                    $this->jsonResponse(['error' => 'Specified user is not a gerant or does not exist.'], 403);
-                    return;
-                }
-                $userId = $paramUserId; // Viewing as this gerant
-            } else {
-                $this->jsonResponse(['error' => 'Access denied or user is not a gerant.'], 403);
-                return;
-            }
+        $userId = $this->getCurrentUserId();
+        $user = User::find($userId); // User should exist if role is gerant and authenticated
+
+        if (!$user) {
+            // This case should ideally not be reached if session management is robust
+            $this->jsonResponse(['error' => 'Authenticated user not found.'], 500);
+            return;
         }
 
-        $openBalances = Balance::getOpenBalancesForUser($userId);
-        $recentOperations = Operation::getRecentOperations(5, $userId);
-        $unresolvedAlerts = Alert::getUnresolvedAlerts(null, $userId); // Assuming getUnresolvedAlerts can be filtered by user
+        // TODO: Replace with actual model calls once methods are implemented in Subtask 2
+        // For now, using placeholders or assuming methods might exist but could fail if not yet implemented.
+        // $openBalances = method_exists(Balance::class, 'getOpenBalancesForUser') ? Balance::getOpenBalancesForUser($userId) : []; // Keep if needed for other purposes
+        $currentBalance = method_exists(Balance::class, 'getCurrentForUser') ? Balance::getCurrentForUser($userId) : null;
+        $recentOperations = method_exists(Operation::class, 'getRecentForUser') ? Operation::getRecentForUser($userId, 5) : [];
+        $dailySummary = method_exists(Operation::class, 'getSummaryForUserToday') ? Operation::getSummaryForUserToday($userId) : ['count' => 0, 'total_amount' => 0];
+        $unresolvedAlerts = method_exists(Alert::class, 'getUnresolvedAlerts') ? Alert::getUnresolvedAlerts(null, $userId) : [];
 
-        // You might want to add more specific stats here later, e.g., today's total operations/commissions
 
         $this->jsonResponse([
             'message' => "Welcome to your dashboard, {$user->full_name}!",
@@ -56,14 +53,11 @@ class DashboardController extends Controller {
                 'full_name' => $user->full_name,
                 'role' => $user->role
             ],
-            'open_balances' => $openBalances,
+            // 'open_balances' => $openBalances, // Send this if the dashboard page needs the full list of open balances
+            'current_balance' => $currentBalance, // Single, most recent balance object
             'recent_operations' => $recentOperations,
+            'daily_summary' => $dailySummary,
             'unresolved_alerts' => $unresolvedAlerts,
-            // 'daily_summary' => [
-            //    'total_operations_today' => 0, // Placeholder
-            //    'total_cashed_today' => 0.0, // Placeholder
-            //    'total_commissions_today' => 0.0 // Placeholder
-            // ]
         ], 200);
     }
 

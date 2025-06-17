@@ -3,594 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clôture de journée | Dashboard Agence Multiservice</title>
+    <title>Clôture de Journée - Agence Multiservice</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f5f7fa;
+        body { font-family: 'Poppins', sans-serif; background-color: #f5f7fa; }
+        .info-card { background-color: white; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); padding: 1.5rem; }
+        .form-input, .form-textarea {
+            border-color: #e2e8f0;
         }
-        .sidebar {
-            transition: all 0.3s ease;
-        }
-        .sidebar-item:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        .sidebar-item.active {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-        }
-        .input-error {
-            border-color: #F87171;
-            background-color: #FEF2F2;
-        }
-        .input-warning {
-            border-color: #FACC15;
-            background-color: #FEFCE8;
-        }
-        .input-success {
-            border-color: #22C55E;
-            background-color: #F0FDF4;
-        }
-        .card-shadow {
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-        .tooltip {
-            position: relative;
-            display: inline-block;
-        }
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 200px;
-            background-color: #1E293B;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 8px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -100px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            font-size: 14px;
-        }
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
+        .form-input:focus, .form-textarea:focus {
+            border-color: #3b82f6; /* blue-500 */
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
         }
     </style>
 </head>
-<body class="bg-gray-50">
-    <div class="flex h-screen overflow-hidden">
-        <!-- Sidebar -->
-        <div class="sidebar bg-indigo-900 text-white w-64 md:w-20 lg:w-64 flex-shrink-0 transition-all duration-300 ease-in-out overflow-y-auto">
-            <div class="p-4 flex items-center justify-between">
-                <div class="flex items-center">
-                    <i class="fas fa-hand-holding-usd text-2xl mr-2"></i>
-                    <span class="text-xl font-semibold hidden md:hidden lg:inline">MultiService</span>
-                </div>
-                <button id="sidebarToggle" class="md:block lg:hidden text-white focus:outline-none">
-                    <i class="fas fa-bars"></i>
-                </button>
+<body class="bg-gray-100">
+    <script src="public/js/common.js"></script>
+    <script src="public/js/cloture.js" defer></script>
+
+    <!-- Navigation (Placeholder) -->
+    <nav class="bg-indigo-900 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="gerant-dashboard.html" class="text-xl font-semibold">Agence Multiservice</a>
+            <div>
+                <a href="gerant-dashboard.html" class="px-3 hover:text-indigo-300">Dashboard</a>
+                <a href="operation.html" class="px-3 hover:text-indigo-300">Opérations</a>
+                <a href="cloture.html" class="px-3 hover:text-indigo-300 font-bold">Clôture</a>
+                <button id="nav-logout-button" class="px-3 hover:text-indigo-300">Déconnexion</button>
             </div>
-            <nav class="mt-6">
-                <div class="px-4">
-                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer" data-page="gerant-dashboard.html">
-                        <i class="fas fa-tachometer-alt mr-3"></i> 
-                        <span class="hidden md:hidden lg:inline"><a href="gerant-dashboard.html">Dashboard</a></span>
-                    </div>
-                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer mt-2" data-page="operation.html">
-                        <i class="fas fa-exchange-alt mr-3"></i>
-                        <span class="hidden md:hidden lg:inline"><a href="operation.html">Opérations</a></span>
-                    </div>
-                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer mt-2" data-page="resume_jour.html">
-                        <i class="fas fa-clipboard-list mr-3"></i>
-                        <span class="hidden md:hidden lg:inline"><a href="resume_jour.html">Résumé du jour</a></span>
-                    </div>
-                    
-                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer mt-2" data-page="cloture.html">
-                        <i class="fas fa-lock mr-3"></i>
-                        <span class="hidden md:hidden lg:inline"><a href="cloture.html">Clôture</a></span>
-                    </div>
-                    
-                </div>
-                <div class="absolute bottom-0 w-full p-4">
-                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer" >
-                        <div id="logoutBtn">
-                            <i class="fas fa-sign-out-alt mr-3"></i>
-                            <span class="hidden md:hidden lg:inline">Déconnexion</span>
-                        </div>
-                    </div>
-                </div>
-            </nav>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-6">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Clôture de Journée</h1>
+
+        <div id="cloture-loading" class="text-center py-10">
+            <i class="fas fa-spinner fa-spin text-4xl text-indigo-600"></i>
+            <p class="mt-2 text-gray-600">Chargement des données de clôture...</p>
         </div>
 
-        <!-- Main Content -->
-        <div class="flex-1 overflow-auto">
-            <!-- Header -->
-            <header class="bg-white shadow-sm py-4 px-6 flex items-center justify-between">
-                <div class="flex items-center">
-                    <button id="mobileSidebarToggle" class="mr-4 text-gray-600 focus:outline-none md:hidden">
-                        <i class="fas fa-bars"></i>
+        <div id="cloture-error-message" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md" role="alert">
+            <!-- Error messages will be inserted here by JS -->
+        </div>
+        <div id="cloture-success-message" class="hidden bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-md" role="alert">
+            <!-- Success messages will be inserted here by JS -->
+        </div>
+
+        <div id="cloture-data-section" class="hidden">
+            <!-- Cloture Data Display -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="info-card">
+                    <h2 class="text-xl font-semibold text-gray-700 mb-2">Solde Initial (Aujourd'hui)</h2>
+                    <p class="text-3xl font-bold text-indigo-600" id="cloture-initial-balance">0.00 FCFA</p>
+                    <p class="text-sm text-gray-500">Basé sur la clôture précédente.</p>
+                </div>
+                <div class="info-card">
+                    <h2 class="text-xl font-semibold text-gray-700 mb-2">Solde Théorique Final</h2>
+                    <p class="text-3xl font-bold text-blue-600" id="cloture-theoretical-balance">0.00 FCFA</p>
+                    <p class="text-sm text-gray-500">Solde initial + Total opérations du jour.</p>
+                </div>
+            </div>
+
+            <div class="bg-white shadow-xl rounded-lg p-6 mb-8">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Opérations Non Clôturées (Aujourd'hui)</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date/Heure</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase text-right">Montant</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase text-right">Commission</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cloture-operations-table-body" class="bg-white divide-y divide-gray-200">
+                            <!-- JS will populate this -->
+                            <tr><td colspan="4" class="text-center py-3 text-gray-500">Chargement...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cloture Form -->
+        <div id="cloture-form-section" class="hidden bg-white shadow-xl rounded-lg p-6">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Soumettre la Clôture</h2>
+            <form id="cloture-form" class="space-y-6">
+                <div>
+                    <label for="form-actual-final-amount" class="block text-sm font-medium text-gray-700 mb-1">Solde Réel Final Constaté <span class="text-red-500">*</span></label>
+                    <input type="number" id="form-actual-final-amount" name="actual_final_amount" step="0.01" class="form-input block w-full py-2 px-3 border rounded-md shadow-sm focus:outline-none sm:text-lg" required placeholder="Entrez le montant physique">
+                </div>
+
+                <div class="info-card bg-gray-50 p-4">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-1">Écart Constaté</h3>
+                    <p class="text-2xl font-bold" id="cloture-difference">0.00 FCFA</p>
+                    <p class="text-sm text-gray-500">(Solde Réel - Solde Théorique)</p>
+                </div>
+
+                <div>
+                    <label for="form-cloture-notes" class="block text-sm font-medium text-gray-700 mb-1">Notes (Optionnel)</label>
+                    <textarea id="form-cloture-notes" name="cloture_notes" rows="3" class="form-textarea block w-full py-2 px-3 border rounded-md shadow-sm focus:outline-none sm:text-sm" placeholder="Ex: petit écart dû à une erreur de rendu de monnaie, etc."></textarea>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        <i class="fas fa-check-circle mr-2"></i> Clôturer la Journée
                     </button>
-                    <h1 class="text-xl font-semibold text-gray-800">Clôture de journée</h1>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <div class="relative">
-                        <button class="text-gray-600 focus:outline-none relative">
-                            <i class="fas fa-bell text-xl"></i>
-                            <span class="notification-badge bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
-                        </button>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-semibold">JD</div>
-                        <div class="ml-3 hidden md:block">
-                            <p class="text-sm font-medium text-gray-800">Jean Dupont</p>
-                            <p class="text-xs text-gray-500">Gérant</p>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Cloture Content -->
-            <main class="p-6">
-                <!-- Header -->
-                <div class="mb-8">
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-                        <div>
-                            <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Clôture de la journée — <span id="current-date"></span></h1>
-                            <p class="text-gray-600 mt-2"><i class="far fa-clock mr-2 text-blue-500"></i> Heure de saisie : <span id="current-time"></span></p>
-                        </div>
-                        <div class="mt-4 md:mt-0">
-                            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                                <p class="text-blue-800 flex items-center">
-                                    <i class="fas fa-info-circle mr-2 text-blue-500"></i>
-                                    Merci de remplir les soldes finaux pour valider la journée. Vous avez jusqu'à 21h.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Alert Section -->
-                <div id="alert-section" class="hidden mb-8 p-4 rounded-lg"></div>
-
-                <!-- Balance Input Section -->
-                <section class="mb-8">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                        <i class="fas fa-calculator mr-2 text-blue-500"></i>
-                        Saisie des soldes finaux
-                    </h2>
-                    
-                    <!-- Desktop Table -->
-                    <div class="hidden md:block">
-                        <div class="bg-white rounded-lg overflow-hidden card-shadow">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-blue-50">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-blue-500 uppercase tracking-wider">Service</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-blue-500 uppercase tracking-wider">Solde Théorique</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-blue-500 uppercase tracking-wider">Solde Final</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-blue-500 uppercase tracking-wider">Écart</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-blue-500 uppercase tracking-wider">État</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200" id="balance-table-body">
-                                    <!-- Rows will be added by JavaScript -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <!-- Mobile Cards -->
-                    <div class="md:hidden space-y-4" id="mobile-cards-container">
-                        <!-- Cards will be added by JavaScript -->
-                    </div>
-                </section>
-
-                <!-- Notes Section -->
-                <section class="mb-8">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                        <i class="fas fa-edit mr-2 text-blue-500"></i>
-                        Notes de fin de journée (optionnel)
-                    </h2>
-                    <textarea id="notes" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="4" placeholder="Problème technique, explication d'écart, infos utiles à l'admin..."></textarea>
-                </section>
-
-                <!-- Submit Section -->
-                <section class="fixed bottom-0 left-0 right-0 bg-white py-4 px-6 shadow-lg md:static md:shadow-none">
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-                        <div class="mb-4 md:mb-0">
-                            <p class="text-gray-600 text-sm hidden md:block">
-                                <i class="fas fa-shield-alt mr-2 text-blue-500"></i>
-                                Après validation, la journée sera bloquée et aucune modification ne sera possible.
-                            </p>
-                        </div>
-                        <button id="submit-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center">
-                            <i class="fas fa-paper-plane mr-2"></i>
-                            Envoyer le rapport
-                        </button>
-                    </div>
-                </section>
-
-                <!-- Success Modal -->
-                <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-                    <div class="bg-white rounded-lg p-8 max-w-md mx-4">
-                        <div class="text-center">
-                            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-                                <i class="fas fa-check text-green-600 text-xl"></i>
-                            </div>
-                            <h3 class="text-lg font-medium text-gray-900 mt-4" id="success-message"></h3>
-                            <div class="mt-6">
-                                <button id="close-modal-btn" type="button" class="inline-flex justify-center px-4 py-2 text-sm font-medium text-blue-900 bg-blue-100 border border-transparent rounded-md hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500">
-                                    Fermer
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
+            </form>
         </div>
     </div>
 
     <script>
-
-        
-        // Services data
-        const services = [
-            { name: 'MTN', theoretical: 45000, icon: 'fa-mobile-alt', color: 'bg-orange-100', textColor: 'text-orange-800' },
-            { name: 'MOOV', theoretical: 32000, icon: 'fa-sim-card', color: 'bg-purple-100', textColor: 'text-purple-800' },
-            { name: 'CELTIS', theoretical: 12000, icon: 'fa-globe-africa', color: 'bg-green-100', textColor: 'text-green-800' },
-            { name: 'WU', theoretical: 150000, icon: 'fa-money-bill-wave', color: 'bg-blue-100', textColor: 'text-blue-800' },
-            { name: 'RIA', theoretical: 90000, icon: 'fa-exchange-alt', color: 'bg-red-100', textColor: 'text-red-800' }
-        ];
-
-        // Current date and time
-        function updateDateTime() {
-            const now = new Date();
-            const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('current-date').textContent = now.toLocaleDateString('fr-FR', dateOptions);
-            document.getElementById('current-time').textContent = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-            
-            // Check if it's after 9 PM
-            if (now.getHours() >= 21) {
-                showAlert("Il est après 21h. La clôture de journée est en retard.", "error");
-            }
-        }
-
-        // Initialize the page
-        function initPage() {
-            updateDateTime();
-            setInterval(updateDateTime, 60000); // Update time every minute
-            
-            // Create desktop table rows
-            const tableBody = document.getElementById('balance-table-body');
-            services.forEach(service => {
-                const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-50';
-                row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0 h-10 w-10 rounded-full ${service.color} flex items-center justify-center">
-                                <i class="fas ${service.icon} ${service.textColor}"></i>
-                            </div>
-                            <div class="ml-4">
-                                <div class="text-sm font-medium text-gray-900">${service.name}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm text-gray-900">${service.theoretical.toLocaleString('fr-FR')} FCFA</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="tooltip">
-                            <input type="number" id="${service.name}-input" class="w-32 px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="0">
-                            <span class="tooltiptext">Entrez le solde final pour ${service.name}</span>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm" id="${service.name}-difference">-</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div id="${service.name}-status" class="text-sm"></div>
-                    </td>
-                `;
-                tableBody.appendChild(row);
-                
-                // Add input event listener
-                document.getElementById(`${service.name}-input`).addEventListener('input', (e) => {
-                    calculateDifference(service.name, service.theoretical, e.target.value);
+        // Attach logout to nav button
+        document.addEventListener('DOMContentLoaded', () => {
+            const navLogoutButton = document.getElementById('nav-logout-button');
+            if (navLogoutButton && typeof logoutUser === 'function') {
+                navLogoutButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    logoutUser();
                 });
-            });
-            
-            // Create mobile cards
-            const mobileContainer = document.getElementById('mobile-cards-container');
-            services.forEach(service => {
-                const card = document.createElement('div');
-                card.className = 'bg-white p-4 rounded-lg card-shadow';
-                card.innerHTML = `
-                    <div class="flex items-center mb-3">
-                        <div class="flex-shrink-0 h-10 w-10 rounded-full ${service.color} flex items-center justify-center">
-                            <i class="fas ${service.icon} ${service.textColor}"></i>
-                        </div>
-                        <div class="ml-4">
-                            <h3 class="text-lg font-medium text-gray-900">${service.name}</h3>
-                            <p class="text-sm text-gray-500">Solde théorique: ${service.theoretical.toLocaleString('fr-FR')} FCFA</p>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="${service.name}-mobile-input" class="block text-sm font-medium text-gray-700 mb-1">Solde final</label>
-                        <div class="tooltip">
-                            <input type="number" id="${service.name}-mobile-input" class="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="0">
-                            <span class="tooltiptext">Entrez le solde final pour ${service.name}</span>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="text-sm text-gray-600">Écart:</p>
-                            <p class="text-sm font-medium" id="${service.name}-mobile-difference">-</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">État:</p>
-                            <p class="text-sm font-medium" id="${service.name}-mobile-status">-</p>
-                        </div>
-                    </div>
-                `;
-                mobileContainer.appendChild(card);
-                
-                // Add input event listener
-                document.getElementById(`${service.name}-mobile-input`).addEventListener('input', (e) => {
-                    calculateDifference(service.name, service.theoretical, e.target.value);
-                });
-            });
-            
-            // Submit button event
-            document.getElementById('submit-btn').addEventListener('click', validateAndSubmit);
-            
-            // Close modal button
-            document.getElementById('close-modal-btn').addEventListener('click', () => {
-                document.getElementById('success-modal').classList.add('hidden');
-            });
-        }
-        
-        // Calculate difference between theoretical and actual balance
-        function calculateDifference(serviceName, theoretical, actual) {
-            if (!actual) {
-                // Clear if input is empty
-                document.getElementById(`${serviceName}-difference`).textContent = '-';
-                document.getElementById(`${serviceName}-mobile-difference`).textContent = '-';
-                document.getElementById(`${serviceName}-status`).textContent = '-';
-                document.getElementById(`${service.name}-mobile-status`).textContent = '-';
-                document.getElementById(`${serviceName}-input`).className = 'w-32 px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500';
-                document.getElementById(`${serviceName}-mobile-input`).className = 'w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500';
-                return;
             }
-            
-            const actualNum = parseFloat(actual);
-            const difference = actualNum - theoretical;
-            const absDifference = Math.abs(difference);
-            
-            // Update difference display
-            document.getElementById(`${serviceName}-difference`).textContent = `${difference.toLocaleString('fr-FR')} FCFA`;
-            document.getElementById(`${serviceName}-mobile-difference`).textContent = `${difference.toLocaleString('fr-FR')} FCFA`;
-            
-            // Determine status
-            let statusText, statusIcon, statusColor, inputClass;
-            
-            if (absDifference === 0) {
-                statusText = 'Équilibré';
-                statusIcon = '✅';
-                statusColor = 'text-green-600';
-                inputClass = 'input-success';
-            } else if (absDifference <= 500) {
-                statusText = 'Petit écart';
-                statusIcon = '⚠️';
-                statusColor = 'text-yellow-600';
-                inputClass = 'input-warning';
-            } else {
-                statusText = 'Écart important';
-                statusIcon = '❌';
-                statusColor = 'text-red-600';
-                inputClass = 'input-error';
-                
-                // Show alert for significant difference
-                showAlert(`Le solde ${serviceName} a un écart important (${difference.toLocaleString('fr-FR')} FCFA). Vérifiez les transactions manquantes ou erreurs de saisie.`, "warning");
-            }
-            
-            // Update status display
-            document.getElementById(`${serviceName}-status`).innerHTML = `<span class="${statusColor}">${statusIcon} ${statusText}</span>`;
-            document.getElementById(`${service.name}-mobile-status`).innerHTML = `<span class="${statusColor}">${statusIcon} ${statusText}</span>`;
-            
-            // Update input styling
-            document.getElementById(`${serviceName}-input`).className = `w-32 px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${inputClass}`;
-            document.getElementById(`${serviceName}-mobile-input`).className = `w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${inputClass}`;
-        }
-        
-        // Show alert message
-        function showAlert(message, type) {
-            const alertSection = document.getElementById('alert-section');
-            
-            let alertClass, icon;
-            if (type === 'error') {
-                alertClass = 'bg-red-50 border-l-4 border-red-500 text-red-700';
-                icon = 'fas fa-exclamation-circle text-red-500';
-            } else if (type === 'warning') {
-                alertClass = 'bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700';
-                icon = 'fas fa-exclamation-triangle text-yellow-500';
-            } else {
-                alertClass = 'bg-blue-50 border-l-4 border-blue-500 text-blue-700';
-                icon = 'fas fa-info-circle text-blue-500';
-            }
-            
-            alertSection.className = `${alertClass} p-4 rounded-lg mb-8 flex items-start`;
-            alertSection.innerHTML = `
-                <i class="${icon} mr-3 mt-1"></i>
-                <div>${message}</div>
-            `;
-            
-            alertSection.classList.remove('hidden');
-            
-            // Auto-hide after 5 seconds if not an error
-            if (type !== 'error') {
-                setTimeout(() => {
-                    alertSection.classList.add('hidden');
-                }, 5000);
-            }
-        }
-        
-        // Validate and submit the form
-        function validateAndSubmit() {
-            let isValid = true;
-            let emptyFields = [];
-            
-            // Check for empty fields
-            services.forEach(service => {
-                const input = document.getElementById(`${service.name}-input`);
-                if (!input.value) {
-                    emptyFields.push(service.name);
-                    input.className = `w-32 px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 input-error`;
-                    document.getElementById(`${service.name}-mobile-input`).className = `w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 input-error`;
-                    isValid = false;
-                }
-            });
-            
-            if (emptyFields.length > 0) {
-                showAlert(`Veuillez remplir les soldes pour: ${emptyFields.join(', ')}`, "error");
-                return;
-            }
-            
-            // Check for negative values
-            let negativeValues = [];
-            services.forEach(service => {
-                const input = document.getElementById(`${service.name}-input`);
-                if (parseFloat(input.value) < 0) {
-                    negativeValues.push(service.name);
-                    isValid = false;
-                }
-            });
-            
-            if (negativeValues.length > 0) {
-                showAlert(`Les soldes ne peuvent pas être négatifs pour: ${negativeValues.join(', ')}`, "error");
-                return;
-            }
-            
-            if (isValid) {
-                // Simulate successful submission
-                const now = new Date();
-                const successMessage = `Clôture réussie à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}. Merci !`;
-                
-                document.getElementById('success-message').textContent = successMessage;
-                document.getElementById('success-modal').classList.remove('hidden');
-                
-                // Disable all inputs and button
-                services.forEach(service => {
-                    document.getElementById(`${service.name}-input`).disabled = true;
-                    document.getElementById(`${service.name}-mobile-input`).disabled = true;
-                });
-                document.getElementById('notes').disabled = true;
-                document.getElementById('submit-btn').disabled = true;
-                document.getElementById('submit-btn').className = 'bg-gray-400 text-white font-medium py-3 px-6 rounded-lg flex items-center justify-center cursor-not-allowed';
-            }
-        }
-        
-        // Toggle sidebar on mobile
-        document.getElementById('mobileSidebarToggle').addEventListener('click', function() {
-            document.querySelector('.sidebar').classList.toggle('-translate-x-full');
         });
-
-        // Toggle sidebar on desktop
-        document.getElementById('sidebarToggle').addEventListener('click', function() {
-            document.querySelector('.sidebar').classList.toggle('w-64');
-            document.querySelector('.sidebar').classList.toggle('w-20');
-            
-            // Toggle text visibility in sidebar items
-            const sidebarTexts = document.querySelectorAll('.sidebar-item span');
-            sidebarTexts.forEach(text => {
-                text.classList.toggle('hidden');
-            });
-            
-            // Toggle logo text
-            document.querySelector('.sidebar .text-xl').classList.toggle('hidden');
-        });
-
-
-        // Highlight active sidebar item
-        document.addEventListener('DOMContentLoaded', function() {
-            const currentPage = window.location.pathname.split('/').pop();
-            document.querySelectorAll('.sidebar-item').forEach(item => {
-                const link = item.querySelector('a');
-                if (link && link.getAttribute('href') === currentPage) {
-                    item.classList.add('active');
-                } else if (item.getAttribute('data-page') === currentPage && !link) {
-                    item.classList.add('active');
-                }
-            });
-             initPage(); // Call the original initPage
-        });
-
-        document.addEventListener('DOMContentLoaded', function() {
-    // Gestion de la sidebar active
-    const currentPage = window.location.pathname.split('/').pop();
-    document.querySelectorAll('.sidebar-item').forEach(item => {
-        const link = item.querySelector('a');
-        if (link && link.getAttribute('href') === currentPage) {
-            item.classList.add('active');
-        } else if (item.getAttribute('data-page') === currentPage && !link) {
-            item.classList.add('active');
-        }
-    });
-
-    // Gestion de la déconnexion
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Création de la modal de confirmation
-            const modal = document.createElement('div');
-            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-            modal.innerHTML = `
-                <div class="bg-white rounded-lg p-6 max-w-sm w-full">
-                    <h3 class="text-lg font-bold mb-4">Confirmer la déconnexion</h3>
-                    <p class="mb-6">Êtes-vous sûr de vouloir vous déconnecter ?</p>
-                    <div class="flex justify-end space-x-3">
-                        <button id="cancelLogout" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-                            Annuler
-                        </button>
-                        <button id="confirmLogout" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
-                            Se déconnecter
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(modal);
-            
-            // Gestion des boutons de la modal
-            document.getElementById('cancelLogout').addEventListener('click', () => {
-                document.body.removeChild(modal);
-            });
-            
-            document.getElementById('confirmLogout').addEventListener('click', () => {
-                logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Déconnexion...';
-                logoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                
-                // Redirection après délai
-                setTimeout(() => {
-                    window.location.href = 'index.html'; // Remplacez par votre URL de déconnexion
-                }, 1000);
-            });
-        });
-    }
-});
     </script>
 </body>
 </html>

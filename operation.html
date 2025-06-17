@@ -3,904 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enregistrement des opérations | Dashboard Agence Multiservice</title>
+    <title>Gestion des Opérations - Agence Multiservice</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
     <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f5f7fa;
-            transition: all 0.3s ease;
+        body { font-family: 'Poppins', sans-serif; background-color: #f5f7fa; }
+        .table-action-btn { transition: color 0.2s ease-in-out; }
+        .modal { display: none; } /* Basic modal styling if needed later */
+        .form-input, .form-select, .form-textarea {
+            border-color: #e2e8f0;
         }
-        .sidebar {
-            transition: all 0.3s ease;
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            border-color: #3b82f6; /* blue-500 */
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
         }
-        .sidebar-item:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        .sidebar-item.active {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-        }
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .input-error {
-            animation: shake 0.5s;
-            border-color: #F87171 !important;
-        }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-            20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-        
-        .toast {
-            animation: slideIn 0.3s ease, fadeOut 0.5s ease 2.5s forwards;
-        }
-        
-        @keyframes slideIn {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
-        }
-        
-        .network-mtn { background-color: #FACC15; }
-        .network-moov { background-color: #A3E635; }
-        .network-celtis { background-color: #2563EB; }
     </style>
 </head>
-<body class="bg-gray-50">
-    <div class="flex h-screen overflow-hidden">
-        <!-- Sidebar -->
-        <div class="sidebar bg-indigo-900 text-white w-64 md:w-20 lg:w-64 flex-shrink-0 transition-all duration-300 ease-in-out overflow-y-auto">
-            <div class="p-4 flex items-center justify-between">
-                <div class="flex items-center">
-                    <i class="fas fa-hand-holding-usd text-2xl mr-2"></i>
-                    <span class="text-xl font-semibold hidden md:hidden lg:inline">MultiService</span>
-                </div>
-                <button id="sidebarToggle" class="md:block lg:hidden text-white focus:outline-none">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </div>
-            <nav class="mt-6">
-                <div class="px-4">
-                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer" data-page="gerant-dashboard.html">
-                        <i class="fas fa-tachometer-alt mr-3"></i> 
-                        <span class="hidden md:hidden lg:inline"><a href="gerant-dashboard.html">Dashboard</a></span>
-                    </div>
-                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer mt-2" data-page="operation.html">
-                        <i class="fas fa-exchange-alt mr-3"></i>
-                        <span class="hidden md:hidden lg:inline"><a href="operation.html">Opérations</a></span>
-                    </div>
-                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer mt-2" data-page="resume_jour.html">
-                        <i class="fas fa-clipboard-list mr-3"></i>
-                        <span class="hidden md:hidden lg:inline"><a href="resume_jour.html">Résumé du jour</a></span>
-                    </div>
-                    
-                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer mt-2" data-page="cloture.html">
-                        <i class="fas fa-lock mr-3"></i>
-                        <span class="hidden md:hidden lg:inline"><a href="cloture.html">Clôture</a></span>
-                    </div>
-                    
-                </div>
-                <div class="absolute bottom-0 w-full p-4">
-                    <div class="sidebar-item flex items-center py-3 px-3 rounded-lg cursor-pointer">
-                        <div id="logoutBtn">
-                            <i class="fas fa-sign-out-alt mr-3"></i>
-                            <span class="hidden md:hidden lg:inline">Déconnexion</span>
-                        </div>
-                    </div>
-                </div>
-            </nav>
-        </div>
+<body class="bg-gray-100">
+    <script src="public/js/common.js"></script>
+    <script src="public/js/operation.js" defer></script>
 
-        <!-- Main content -->
-        <div class="flex flex-col flex-1 overflow-hidden">
-            <!-- Header -->
-            <header class="bg-white shadow-sm py-4 px-6 flex items-center justify-between">
-                <div class="flex items-center">
-                    <button id="mobileSidebarToggle" class="mr-4 text-gray-600 focus:outline-none md:hidden">
-                        <i class="fas fa-bars"></i>
+    <!-- Navigation (Placeholder - could be included via JS or server-side) -->
+    <nav class="bg-indigo-900 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="gerant-dashboard.html" class="text-xl font-semibold">Agence Multiservice</a>
+            <div>
+                <a href="gerant-dashboard.html" class="px-3 hover:text-indigo-300">Dashboard</a>
+                <a href="operation.html" class="px-3 hover:text-indigo-300 font-bold">Opérations</a>
+                <!-- Add other nav links as needed -->
+                <button id="nav-logout-button" class="px-3 hover:text-indigo-300">Déconnexion</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-6">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Gestion des Opérations</h1>
+
+        <!-- Global Notification Area -->
+        <div id="global-notification" class="hidden mb-4 p-4 rounded-md text-white"></div>
+
+        <!-- Operation Form Card -->
+        <div class="bg-white shadow-xl rounded-lg p-6 mb-8">
+            <h2 id="form-title" class="text-2xl font-semibold text-gray-700 mb-4">Ajouter une Nouvelle Opération</h2>
+            <div id="form-loading" class="hidden animate-pulse text-gray-500 mb-4">Chargement du formulaire...</div>
+
+            <form id="operation-form" class="space-y-4">
+                <input type="hidden" id="form-operation-id">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="form-service-id" class="block text-sm font-medium text-gray-700 mb-1">Service <span class="text-red-500">*</span></label>
+                        <select id="form-service-id" name="service_id" class="form-select block w-full py-2 px-3 border rounded-md shadow-sm focus:outline-none sm:text-sm" required>
+                            <option value="">Chargement des services...</option>
+                        </select>
+                        <p class="text-xs text-red-500 mt-1 hidden" id="error-service-id"></p>
+                    </div>
+                    <div>
+                        <label for="form-operation-type-id" class="block text-sm font-medium text-gray-700 mb-1">Type d'Opération <span class="text-red-500">*</span></label>
+                        <select id="form-operation-type-id" name="operation_type_id" class="form-select block w-full py-2 px-3 border rounded-md shadow-sm focus:outline-none sm:text-sm" required>
+                            <option value="">Chargement des types...</option>
+                        </select>
+                        <p class="text-xs text-red-500 mt-1 hidden" id="error-operation-type-id"></p>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="form-amount" class="block text-sm font-medium text-gray-700 mb-1">Montant <span class="text-red-500">*</span></label>
+                    <input type="number" id="form-amount" name="amount" step="0.01" class="form-input block w-full py-2 px-3 border rounded-md shadow-sm focus:outline-none sm:text-sm" required placeholder="0.00">
+                    <p class="text-xs text-red-500 mt-1 hidden" id="error-amount"></p>
+                </div>
+
+                <div>
+                    <label for="form-operation-time" class="block text-sm font-medium text-gray-700 mb-1">Date et Heure <span class="text-red-500">*</span></label>
+                    <input type="datetime-local" id="form-operation-time" name="operation_time" class="form-input block w-full py-2 px-3 border rounded-md shadow-sm focus:outline-none sm:text-sm" required>
+                    <p class="text-xs text-red-500 mt-1 hidden" id="error-operation-time"></p>
+                </div>
+
+                <div>
+                    <label for="form-description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="form-description" name="description" rows="3" class="form-textarea block w-full py-2 px-3 border rounded-md shadow-sm focus:outline-none sm:text-sm" placeholder="Entrez une description ou une note..."></textarea>
+                    <p class="text-xs text-red-500 mt-1 hidden" id="error-description"></p>
+                </div>
+
+                <!-- Other fields like commission_applied, reference_id, balance_id can be added if direct user input is needed -->
+
+                <div class="flex items-center justify-end space-x-3 pt-2">
+                    <button type="button" id="reset-form-button" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Annuler
                     </button>
-                    <h1 class="text-xl font-semibold text-gray-800">Enregistrement des opérations</h1>
+                    <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <i class="fas fa-plus-circle mr-1"></i> <span id="form-submit-button-text">Ajouter Opération</span>
+                    </button>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <div class="relative">
-                        <button class="text-gray-600 focus:outline-none relative">
-                            <i class="fas fa-bell text-xl"></i>
-                            <span class="notification-badge bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
-                        </button>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-semibold">JD</div>
-                        <div class="ml-3 hidden md:block">
-                            <p class="text-sm font-medium text-gray-800">Jean Dupont</p>
-                            <p class="text-xs text-gray-500">Gérant</p>
-                        </div>
-                    </div>
-                </div>
-            </header>
-            
-            <!-- Page content -->
-            <div class="flex-1 overflow-auto p-4 md:p-6">
-                <div class="max-w-6xl mx-auto">
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                        <div>
-                            <h1 class="text-2xl font-bold text-gray-800">📤 Enregistrement des opérations</h1>
-                            <p class="text-gray-600">Enregistrez rapidement chaque opération effectuée aujourd'hui</p>
-                        </div>
-                        <div class="mt-4 md:mt-0 flex items-center space-x-2">
-                            <div class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                                <i class="fas fa-clock w-4 h-4 inline mr-1"></i>
-                                <span id="current-time"></span>
-                            </div>
-                            <div class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                                <i class="fas fa-calendar w-4 h-4 inline mr-1"></i>
-                                <span id="current-date"></span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Stats summary -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                            <div class="flex items-center">
-                                <div class="p-2 rounded-full bg-blue-100 text-blue-600">
-                                    <i data-lucide="list" class="w-5 h-5"></i>
-                                </div>
-                                <div class="ml-3">
-                                    <p class="text-sm font-medium text-gray-500">Transactions aujourd'hui</p>
-                                    <p class="text-xl font-semibold text-gray-800">3</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                            <div class="flex items-center">
-                                <div class="p-2 rounded-full bg-green-100 text-green-600">
-                                    <i data-lucide="dollar-sign" class="w-5 h-5"></i>
-                                </div>
-                                <div class="ml-3">
-                                    <p class="text-sm font-medium text-gray-500">Total encaissé</p>
-                                    <p class="text-xl font-semibold text-gray-800">95 000 FCFA</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                            <div class="flex items-center">
-                                <div class="p-2 rounded-full bg-yellow-100 text-yellow-600">
-                                    <i data-lucide="activity" class="w-5 h-5"></i>
-                                </div>
-                                <div class="ml-3">
-                                    <p class="text-sm font-medium text-gray-500">Pic d'activité</p>
-                                    <p class="text-xl font-semibold text-gray-800">12h30</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Tabs navigation -->
-                    <div class="mb-6">
-                        <div class="flex overflow-x-auto pb-2">
-                            <div class="flex space-x-2">
-                                <button data-tab="transfer" class="tab-btn flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white">
-                                    <i data-lucide="send" class="w-4 h-4 mr-2"></i>
-                                    Transfert d'argent
-                                </button>
-                                <button data-tab="mobile" class="tab-btn flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-white text-gray-700 border border-gray-200 hover:bg-gray-50">
-                                    <i data-lucide="smartphone" class="w-4 h-4 mr-2"></i>
-                                    Crédit téléphone
-                                </button>
-                                <button data-tab="bills" class="tab-btn flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-white text-gray-700 border border-gray-200 hover:bg-gray-50">
-                                    <i data-lucide="file-text" class="w-4 h-4 mr-2"></i>
-                                    Paiement factures
-                                </button>
-                                <button data-tab="other" class="tab-btn flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-white text-gray-700 border border-gray-200 hover:bg-gray-50">
-                                    <i data-lucide="more-horizontal" class="w-4 h-4 mr-2"></i>
-                                    Autres opérations
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Tab content -->
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4 md:p-6">
-                        <!-- Transfer tab -->
-                        <div id="transfer-tab" class="tab-content active">
-                            <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                                <i data-lucide="send" class="w-5 h-5 mr-2 text-blue-600"></i>
-                                Enregistrer un transfert d'argent
-                            </h2>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <form id="transfer-form">
-                                        <div class="space-y-4">
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Type d'opération</label>
-                                                <div class="flex space-x-4">
-                                                    <label class="inline-flex items-center">
-                                                        <input type="radio" name="transfer-type" value="sent" class="h-4 w-4 text-blue-600" checked>
-                                                        <span class="ml-2 text-gray-700">Envoyé</span>
-                                                    </label>
-                                                    <label class="inline-flex items-center">
-                                                        <input type="radio" name="transfer-type" value="received" class="h-4 w-4 text-blue-600">
-                                                        <span class="ml-2 text-gray-700">Reçu</span>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Service utilisé</label>
-                                                <select name="transfer-service" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                                                    <option value="">Sélectionnez un service</option>
-                                                    <option value="western-union">Western Union</option>
-                                                    <option value="ria">RIA</option>
-                                                    <option value="small-world">Small World</option>
-                                                    <option value="moneygram">MoneyGram</option>
-                                                </select>
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Montant (FCFA)</label>
-                                                <input type="text" name="transfer-amount" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 amount-input" placeholder="0">
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Commission perçue (FCFA)</label>
-                                                <input type="text" name="transfer-commission" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 amount-input" placeholder="0">
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Nom du client (optionnel)</label>
-                                                <input type="text" name="transfer-client" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Nom complet">
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Notes (optionnel)</label>
-                                                <textarea name="transfer-notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Informations supplémentaires"></textarea>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                                
-                                <div>
-                                    <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
-                                        <h3 class="text-sm font-medium text-blue-800 mb-2">Récapitulatif du jour</h3>
-                                        <div class="space-y-2">
-                                            <div class="flex justify-between text-sm">
-                                                <span class="text-gray-600">Western Union</span>
-                                                <span class="font-medium">2 opérations</span>
-                                            </div>
-                                            <div class="flex justify-between text-sm">
-                                                <span class="text-gray-600">RIA</span>
-                                                <span class="font-medium">1 opération</span>
-                                            </div>
-                                            <div class="flex justify-between text-sm">
-                                                <span class="text-gray-600">Total envoyé</span>
-                                                <span class="font-medium">75 000 FCFA</span>
-                                            </div>
-                                            <div class="flex justify-between text-sm">
-                                                <span class="text-gray-600">Total reçu</span>
-                                                <span class="font-medium">20 000 FCFA</span>
-                                            </div>
-                                            <div class="flex justify-between text-sm font-semibold text-blue-800 pt-2 border-t border-blue-100 mt-2">
-                                                <span>Total commissions</span>
-                                                <span>15 000 FCFA</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="flex justify-end">
-                                        <button id="transfer-submit" class="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
-                                            <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
-                                            Enregistrer cette opération
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Mobile credit tab -->
-                        <div id="mobile-tab" class="tab-content">
-                            <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                                <i data-lucide="smartphone" class="w-5 h-5 mr-2 text-blue-600"></i>
-                                Enregistrer un crédit téléphonique
-                            </h2>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <form id="mobile-form">
-                                        <div class="space-y-4">
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Réseau</label>
-                                                <select name="mobile-network" id="mobile-network" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                                                    <option value="">Sélectionnez un réseau</option>
-                                                    <option value="mtn">MTN</option>
-                                                    <option value="moov">MOOV</option>
-                                                    <option value="celtis">CELTIS</option>
-                                                </select>
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Type de service</label>
-                                                <select name="mobile-service" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                                                    <option value="">Sélectionnez un type</option>
-                                                    <option value="unit">Unités</option>
-                                                    <option value="internet">Forfait internet</option>
-                                                    <option value="deposit">Dépôt</option>
-                                                    <option value="call-internet">Appel + Internet</option>
-                                                    <option value="withdrawal">Retrait</option>
-                                                </select>
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Montant (FCFA)</label>
-                                                <input type="text" name="mobile-amount" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 amount-input" placeholder="0">
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Numéro client</label>
-                                                <input type="text" name="mobile-number" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 phone-input" placeholder="Ex: 96 12 34 56">
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Nom du Client</label>
-                                                <input type="text" name="mobile-name" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Nom complet">
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Commission perçue (optionnel)</label>
-                                                <input type="text" name="mobile-commission" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 amount-input" placeholder="0">
-                                            </div>
-                                            
-                                            <div class="flex items-center">
-                                                <button type="button" id="frequent-service" class="flex items-center text-sm text-blue-600 hover:text-blue-800">
-                                                    <i data-lucide="clock" class="w-4 h-4 mr-1"></i>
-                                                    Service fréquent ? Préremplir
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                                
-                                <div>
-                                    <div id="network-indicator" class="h-2 rounded-full mb-6 opacity-0 transition-all duration-300"></div>
-                                    
-                                    <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
-                                        <h3 class="text-sm font-medium text-blue-800 mb-2">Statistiques rapides</h3>
-                                        <div class="space-y-2">
-                                            <div class="flex justify-between text-sm">
-                                                <span class="text-gray-600">Crédits aujourd'hui</span>
-                                                <span class="font-medium">8 opérations</span>
-                                            </div>
-                                            <div class="flex justify-between text-sm">
-                                                <span class="text-gray-600">MTN</span>
-                                                <span class="font-medium">5 opérations</span>
-                                            </div>
-                                            <div class="flex justify-between text-sm">
-                                                <span class="text-gray-600">MOOV</span>
-                                                <span class="font-medium">2 opérations</span>
-                                            </div>
-                                            <div class="flex justify-between text-sm">
-                                                <span class="text-gray-600">CELTIS</span>
-                                                <span class="font-medium">1 opération</span>
-                                            </div>
-                                            <div class="flex justify-between text-sm font-semibold text-blue-800 pt-2 border-t border-blue-100 mt-2">
-                                                <span>Total encaissé</span>
-                                                <span>45 000 FCFA</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="flex justify-end">
-                                        <button id="mobile-submit" class="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
-                                            <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
-                                            Enregistrer cette opération
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Bills tab -->
-                        <div id="bills-tab" class="tab-content">
-                            <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                                <i data-lucide="file-text" class="w-5 h-5 mr-2 text-blue-600"></i>
-                                Enregistrer un paiement de facture
-                            </h2>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <form id="bills-form">
-                                        <div class="space-y-4">
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Service payé</label>
-                                                <select name="bills-service" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                                                    <option value="">Sélectionnez un service</option>
-                                                    <option value="sbee">SBEE</option>
-                                                    <option value="soneb">SONEB</option>
-                                                    <option value="canal+">CANAL+</option>
-                                                    <option value="cauris">CAURIS</option>
-                                                    <option value="other">Autre</option>
-                                                </select>
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Montant (FCFA)</label>
-                                                <input type="text" name="bills-amount" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 amount-input" placeholder="0">
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Numéro client</label>
-                                                <input type="text" name="bills-number" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Numéro de compte">
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Référence (obligatoire)</label>
-                                                <input type="text" name="bills-reference" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Référence de paiement">
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Nom du client</label>
-                                                <input type="text" name="bills-name" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Nom complet">
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Notes / info client (optionnel)</label>
-                                                <textarea name="bills-notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Informations supplémentaires"></textarea>
-                                            </div>
-                                            
-                                            <div class="flex items-center">
-                                                <input type="checkbox" name="bills-paid" id="bills-paid" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                                <label for="bills-paid" class="ml-2 block text-sm text-gray-700">Facture déjà réglée ?</label>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                                
-                                <div>
-                                    <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
-                                        <h3 class="text-sm font-medium text-blue-800 mb-2">Aperçu de la facture</h3>
-                                        <div class="bg-white p-3 rounded border border-gray-200">
-                                            <div class="text-center py-4 border-b border-gray-200">
-                                                <div class="text-sm text-gray-500">Référence</div>
-                                                <div id="bill-preview-ref" class="font-mono text-lg font-bold text-gray-800">---------</div>
-                                            </div>
-                                            <div class="py-3 border-b border-gray-200">
-                                                <div class="flex justify-between text-sm">
-                                                    <span class="text-gray-600">Service</span>
-                                                    <span id="bill-preview-service" class="font-medium">---------</span>
-                                                </div>
-                                            </div>
-                                            <div class="py-3 border-b border-gray-200">
-                                                <div class="flex justify-between text-sm">
-                                                    <span class="text-gray-600">Client</span>
-                                                    <span id="bill-preview-client" class="font-medium">---------</span>
-                                                </div>
-                                            </div>
-                                            <div class="py-3">
-                                                <div class="flex justify-between font-semibold">
-                                                    <span>Total</span>
-                                                    <span id="bill-preview-amount" class="text-blue-600">0 FCFA</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="flex justify-end">
-                                        <button id="bills-submit" class="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
-                                            <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
-                                            Enregistrer cette opération
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Other operations tab -->
-                        <div id="other-tab" class="tab-content">
-                            <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                                <i data-lucide="more-horizontal" class="w-5 h-5 mr-2 text-blue-600"></i>
-                                Enregistrer une autre opération
-                            </h2>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <form id="other-form">
-                                        <div class="space-y-4">
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Type d'opération</label>
-                                                <input type="text" name="other-type" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: Vente de carte SIM">
-                                            </div>
+            </form>
+        </div>
 
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Nom du client</label>
-                                                <input type="text" name="other-name" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Nom complet">
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Montant (FCFA)</label>
-                                                <input type="text" name="other-amount" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 amount-input" placeholder="0">
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Description complète</label>
-                                                <textarea name="other-description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Détails de l'opération"></textarea>
-                                            </div>
-                                            
-                                            
-                                        </div>
-                                    </form>
-                                </div>
-                                
-                                <div>
-                                    <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
-                                        <h3 class="text-sm font-medium text-blue-800 mb-2">Dernières opérations diverses</h3>
-                                        <div class="space-y-3">
-                                            <div class="text-sm">
-                                                <div class="font-medium">Vente de carte SIM</div>
-                                                <div class="text-gray-600">5 000 FCFA - 10h45</div>
-                                            </div>
-                                            <div class="text-sm">
-                                                <div class="font-medium">Recharge batterie</div>
-                                                <div class="text-gray-600">500 FCFA - 09h30</div>
-                                            </div>
-                                            <div class="text-sm">
-                                                <div class="font-medium">Impression document</div>
-                                                <div class="text-gray-600">200 FCFA - 14h15</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="flex justify-end">
-                                        <button id="other-submit" class="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
-                                            <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
-                                            Enregistrer cette opération
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <!-- Operations Table Card -->
+        <div class="bg-white shadow-xl rounded-lg p-6">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Liste des Opérations</h2>
+            <div id="table-loading" class="animate-pulse text-gray-500 mb-4">Chargement des opérations...</div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date/Heure</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-right">Montant</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="operations-table-body" class="bg-white divide-y divide-gray-200">
+                        <!-- JS will populate this -->
+                        <tr><td colspan="6" class="text-center py-4 text-gray-500">Chargement...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pagination (Placeholder) -->
+            <div class="mt-4 flex justify-center">
+                <!-- Pagination controls will go here if implemented -->
             </div>
         </div>
     </div>
-    
-    <!-- Toast notification -->
-    <div id="toast" class="fixed bottom-4 right-4 hidden">
-        <div class="toast flex items-center bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg shadow-lg">
-            <i data-lucide="check-circle" class="w-6 h-6 mr-2"></i>
-            <span>✅ Opération ajoutée avec succès !</span>
-        </div>
-    </div>
-    
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-    // =============================================
-    // FONCTIONS GENERALES
-    // =============================================
-    
-    // Mise à jour de la date et heure
-    function updateDateTime() {
-        const now = new Date();
-        const options = { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        };
-        
-        const dateTimeString = now.toLocaleDateString('fr-FR', options);
-        const [date, time] = dateTimeString.split(' à ');
-        
-        document.getElementById('current-date').textContent = date;
-        document.getElementById('current-time').textContent = time;
-    }
-    
-    // Initialisation des graphiques
-    function initCharts() {
-        // Graphique des opérations (camembert)
-        const operationsCtx = document.getElementById('operationsChart');
-        if (operationsCtx) {
-            new Chart(operationsCtx.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Transferts', 'Retraits', 'Crédit MTN', 'Crédit MOOV', 'Crédit CELTIS', 'Factures'],
-                    datasets: [{
-                        data: [35, 25, 20, 10, 5, 5],
-                        backgroundColor: [
-                            '#3B82F6', '#10B981', '#F59E0B', 
-                            '#6366F1', '#EC4899', '#8B5CF6'
-                        ],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'right' }
-                    },
-                    cutout: '70%'
-                }
-            });
-        }
-        
-        // Graphique d'activité (ligne)
-        const activityCtx = document.getElementById('activityChart');
-        if (activityCtx) {
-            new Chart(activityCtx.getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: ['8h', '9h', '10h', '11h', '12h', '13h', '14h', '15h', '16h', '17h'],
-                    datasets: [{
-                        label: 'Transactions par heure',
-                        data: [12, 19, 25, 32, 40, 28, 35, 42, 38, 30],
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderColor: '#3B82F6',
-                        borderWidth: 2,
-                        tension: 0.3,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
-        }
-    }
-    
-    // =============================================
-    // GESTION DE LA SIDEBAR
-    // =============================================
-    
-    function setupSidebar() {
-        // Toggle sidebar mobile
-        const mobileToggle = document.getElementById('mobileSidebarToggle');
-        if (mobileToggle) {
-            mobileToggle.addEventListener('click', function() {
-                document.querySelector('.sidebar').classList.toggle('-translate-x-full');
-            });
-        }
-        
-        // Toggle sidebar desktop
-        const desktopToggle = document.getElementById('sidebarToggle');
-        if (desktopToggle) {
-            desktopToggle.addEventListener('click', function() {
-                const sidebar = document.querySelector('.sidebar');
-                sidebar.classList.toggle('w-64');
-                sidebar.classList.toggle('w-20');
-                
-                document.querySelectorAll('.sidebar-item span').forEach(text => {
-                    text.classList.toggle('hidden');
+        // Attach logout to nav button if it exists
+        document.addEventListener('DOMContentLoaded', () => {
+            const navLogoutButton = document.getElementById('nav-logout-button');
+            if (navLogoutButton && typeof logoutUser === 'function') {
+                navLogoutButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    logoutUser();
                 });
-                
-                document.querySelector('.sidebar .text-xl').classList.toggle('hidden');
-            });
-        }
-        
-        // Highlight item actif
-        const currentPath = window.location.pathname.split('/').pop();
-        document.querySelectorAll('.sidebar-item').forEach(item => {
-            const link = item.querySelector('a');
-            if (link && link.getAttribute('href') === currentPath) {
-                item.classList.add('bg-indigo-800');
             }
         });
-    }
-    
-    // =============================================
-    // GESTION DE LA DECONNEXION
-    // =============================================
-    
-    function setupLogout() {
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (!logoutBtn) return;
-        
-        logoutBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Création d'une modal de confirmation plus élégante
-            const modal = document.createElement('div');
-            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-            modal.innerHTML = `
-                <div class="bg-white rounded-lg p-6 max-w-sm w-full">
-                    <h3 class="text-lg font-bold mb-4">Confirmer la déconnexion</h3>
-                    <p class="mb-6">Êtes-vous sûr de vouloir vous déconnecter ?</p>
-                    <div class="flex justify-end space-x-3">
-                        <button id="cancelLogout" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-                            Annuler
-                        </button>
-                        <button id="confirmLogout" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
-                            Se déconnecter
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(modal);
-            
-            // Gestion des boutons de la modal
-            document.getElementById('cancelLogout').addEventListener('click', () => {
-                document.body.removeChild(modal);
-            });
-            
-            document.getElementById('confirmLogout').addEventListener('click', () => {
-                logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Déconnexion...';
-                logoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                
-                // Simulation d'une requête de déconnexion
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 1000);
-            });
-        });
-    }
-    
-    // =============================================
-    // GESTION DES ONGLETS
-    // =============================================
-    
-    function setupTabs() {
-        const tabButtons = document.querySelectorAll('[data-tab]');
-        const tabContents = document.querySelectorAll('.tab-content');
-        
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                // Retirer les classes actives
-                tabButtons.forEach(btn => {
-                    btn.classList.remove('bg-blue-600', 'text-white');
-                    btn.classList.add('bg-white', 'text-gray-700', 'border');
-                });
-                
-                tabContents.forEach(content => {
-                    content.classList.remove('active');
-                });
-                
-                // Ajouter les classes actives
-                button.classList.add('bg-blue-600', 'text-white');
-                button.classList.remove('bg-white', 'text-gray-700', 'border');
-                
-                // Afficher le contenu correspondant
-                const tabId = button.getAttribute('data-tab');
-                document.getElementById(`${tabId}-tab`).classList.add('active');
-            });
-        });
-    }
-    
-    // =============================================
-    // GESTION DES FORMULAIRES
-    // =============================================
-    
-    function setupForms() {
-        // Formatage des montants
-        if (typeof Cleave !== 'undefined') {
-            new Cleave('.amount-input', {
-                numeral: true,
-                numeralThousandsGroupStyle: 'thousand',
-                delimiter: ' ',
-                numeralDecimalScale: 0
-            });
-        }
-        
-        // Validation des formulaires
-        document.querySelectorAll('form').forEach(form => {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                let isValid = true;
-                const requiredInputs = form.querySelectorAll('[required]');
-                
-                requiredInputs.forEach(input => {
-                    if (!input.value.trim()) {
-                        input.classList.add('border-red-500');
-                        isValid = false;
-                        
-                        setTimeout(() => {
-                            input.classList.remove('border-red-500');
-                        }, 2000);
-                    }
-                });
-                
-                if (isValid) {
-                    showToast('Opération enregistrée avec succès !', 'success');
-                    form.reset();
-                } else {
-                    showToast('Veuillez remplir tous les champs requis', 'error');
-                }
-            });
-        });
-    }
-    
-    // =============================================
-    // NOTIFICATIONS ET TOAST
-    // =============================================
-    
-    function showToast(message, type = 'success') {
-        const toast = document.createElement('div');
-        const colors = {
-            success: 'bg-green-100 border-green-500 text-green-700',
-            error: 'bg-red-100 border-red-500 text-red-700',
-            info: 'bg-blue-100 border-blue-500 text-blue-700'
-        };
-        
-        toast.className = `fixed bottom-4 right-4 border-l-4 p-4 rounded-lg shadow-lg ${colors[type]} animate-fadeIn`;
-        toast.innerHTML = `
-            <div class="flex items-center">
-                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} mr-2"></i>
-                <span>${message}</span>
-            </div>
-        `;
-        
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-            toast.classList.add('animate-fadeOut');
-            setTimeout(() => {
-                document.body.removeChild(toast);
-            }, 500);
-        }, 3000);
-    }
-    
-    // =============================================
-    // INITIALISATION
-    // =============================================
-    
-    // Lancer les fonctions d'initialisation
-    updateDateTime();
-    setInterval(updateDateTime, 60000); // Mise à jour chaque minute
-    
-    initCharts();
-    setupSidebar();
-    setupLogout();
-    setupTabs();
-    setupForms();
-    
-    // Ajout des styles d'animation pour les toasts
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeOut {
-            from { opacity: 1; transform: translateY(0); }
-            to { opacity: 0; transform: translateY(20px); }
-        }
-        .animate-fadeIn { animation: fadeIn 0.3s ease forwards; }
-        .animate-fadeOut { animation: fadeOut 0.3s ease forwards; }
-    `;
-    document.head.appendChild(style);
-});
     </script>
 </body>
 </html>
